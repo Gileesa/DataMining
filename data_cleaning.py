@@ -10,10 +10,6 @@ df = pd.read_csv('dataset_mood_smartphone.csv')
 
 print(df.head(20))
 
-# print all distict options in 'variable'
-distinct_variables = df['variable'].unique().tolist()
-print(distinct_variables)
-
 
 # plot average mood vs average screen time for each [id]
 def plot_mood_vs_screentime(df):
@@ -57,10 +53,64 @@ def plot_valence_and_arousal_vs_screentime(df):
     plt.show()
 
 
+def histogram_of_mood(df):
+    mood_df= df[df['variable']=='mood']['value']
+    plt.hist(mood_df, bins=15, color='lightpink', edgecolor='red')
+    plt.title('Histogram of Mood')
+    plt.xlabel('Mood')
+    plt.ylabel('Frequency')
+    plt.show()
+ 
+    print("Mood statistics:")
+    print("Mean:", mood_df.mean())
+    print("Median:", mood_df.median())
+    print("Min:", mood_df.min())
+    print("Max:", mood_df.max())
+
+
+
+def histogram_dates(df):
+
+    plt.figure(figsize=(8,5))
+    plt.hist(df['date'].dropna(), bins=15, color='lightgreen', edgecolor='black')
+    plt.title('Histogram of Dates')
+    plt.xlabel('Date')
+    plt.ylabel('Frequency')
+    plt.show()
+
+    # Date statistics
+    print("Date statistics:")
+    print("Mean:", df['date'].mean())
+    print("Median:", df['date'].median())
+    print("Min:", df['date'].min())
+    print("Max:", df['date'].max())
+
+#  make datetime
+df['date'] = pd.to_datetime(df['time'], errors='coerce')
+
+# print all distict options in 'variable'
+distinct_variables = df['variable'].unique().tolist()
+print(distinct_variables)
+
 plot_mood_vs_screentime(df)
 plot_valence_and_arousal_vs_screentime(df)
 
-# histogram of mood
-# number of distinct ids
-# number of days
-# reduce DF
+histogram_of_mood(df)
+print("\n\n")
+histogram_dates(df)
+
+
+# Printing general info
+num_ids = df['id'].nunique()
+print("\nNumber of distinct IDs:", num_ids)
+num_days = df['date'].dt.date.nunique()
+print("Number of distinct days:", num_days)
+missing_values = df.isnull().sum()
+print("\nMissing values per column:\n", missing_values)
+
+
+# histogram of mood including mean, median, min and max value
+# histogram of date including mean, median, min and max value
+# print number of distinct ids
+# print number of days
+# find any missing values
