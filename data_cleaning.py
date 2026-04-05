@@ -108,6 +108,12 @@ print("Number of distinct days:", num_days)
 missing_values = df.isnull().sum()
 print("\nMissing values per column:\n", missing_values)
 
+# we can see lots of 'value' have missing values
+# find missing rows and count number per variable
+missing_value_rows = df[df['value'].isnull()]
+missing_by_variable = missing_value_rows['variable'].value_counts()
+print("Missing values per variable:")
+print(missing_by_variable) # circumplex.valence: 156, circumplex.arousal: 46
 
 # histogram of mood including mean, median, min and max value
 # histogram of date including mean, median, min and max value
