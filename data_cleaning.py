@@ -7,6 +7,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 df = pd.read_csv('dataset_mood_smartphone.csv')
+#  make datetime
+df['date'] = pd.to_datetime(df['time'], errors='coerce')
 
 print(df.head(20))
 
@@ -16,7 +18,6 @@ def plot_mood_vs_screentime(df):
     # Create pivot table of retrieve columns 'screen' and 'mood'
     # also takes average value of for each id over all dates
     avg_df = df.pivot_table(index='id', columns='variable', values='value', aggfunc='mean').reset_index()
-    print(avg_df.head(20))
 
     # Plot
     plt.figure(figsize=(8,6))
@@ -85,12 +86,68 @@ def histogram_dates(df):
     print("Min:", df['date'].min())
     print("Max:", df['date'].max())
 
-#  make datetime
-df['date'] = pd.to_datetime(df['time'], errors='coerce')
 
-# print all distict options in 'variable'
-distinct_variables = df['variable'].unique().tolist()
-print(distinct_variables)
+def print_general_info(df):
+    print("\n\n====== GENERAL INFO==========")
+    # print all distict options in 'variable'
+    distinct_variables = df['variable'].unique().tolist()
+    print(distinct_variables)
+    
+    # Printing general info
+    num_ids = df['id'].nunique()
+    print("\nNumber of distinct IDs:", num_ids)
+    num_days = df['date'].dt.date.nunique()
+    print("Number of distinct days:", num_days)
+    missing_values = df.isnull().sum()
+    print("\nMissing values per column:\n", missing_values)
+
+    # we can see lots of 'value' have missing values
+    # find missing rows and count number per variable
+    missing_value_rows = df[df['value'].isnull()]
+    missing_by_variable = missing_value_rows['variable'].value_counts()
+    print("Missing values per variable:")
+    print(missing_by_variable) # circumplex.valence: 156, circumplex.arousal: 46
+    print("==========================")
+
+def linear_interpol(x):
+    ''' does (previous_point + next_point)/2 only when both exist '''
+    return x.interpolate(method='linear', limit_area='inside')
+
+def backward_interpol(x):
+    ''' just fill in next value'''
+    return x.bfill()
+
+def missing_imputation(df, varname: str, imputation_func):
+    ''' 
+    This function will impute missing values for the 'varname' under the [value] column.
+    This is done through some imputation func, e.g (previous_point + next_point)/2
+    Mostly used for the varnames: circumplex.valence and circumplex.arousal
+    '''
+    
+    new_df = df.copy()
+
+    # filter only the variable of interest
+    mask = new_df['variable'] == varname
+
+    # sort by id and date to ensure correct interpolation order
+    subset = new_df.loc[mask].sort_values(['id', 'date'])
+
+    # apply interpolation per id
+    subset['value'] = subset.groupby('id')['value'].transform(
+        lambda x: imputation_func(x)
+    )
+
+    # put the interpolated values back
+    new_df.loc[mask, 'value'] = subset['value']
+
+    return new_df
+
+# TODO
+# histogram of mood including mean, median, min and max value
+# histogram of date including mean, median, min and max value
+# print number of distinct ids
+# print number of days
+# find any missing values
 
 plot_mood_vs_screentime(df)
 plot_valence_and_arousal_vs_screentime(df)
@@ -99,24 +156,9 @@ histogram_of_mood(df)
 print("\n\n")
 histogram_dates(df)
 
-
-# Printing general info
-num_ids = df['id'].nunique()
-print("\nNumber of distinct IDs:", num_ids)
-num_days = df['date'].dt.date.nunique()
-print("Number of distinct days:", num_days)
-missing_values = df.isnull().sum()
-print("\nMissing values per column:\n", missing_values)
-
-# we can see lots of 'value' have missing values
-# find missing rows and count number per variable
-missing_value_rows = df[df['value'].isnull()]
-missing_by_variable = missing_value_rows['variable'].value_counts()
-print("Missing values per variable:")
-print(missing_by_variable) # circumplex.valence: 156, circumplex.arousal: 46
-
-# histogram of mood including mean, median, min and max value
-# histogram of date including mean, median, min and max value
-# print number of distinct ids
-# print number of days
-# find any missing values
+cleaned_df = missing_imputation(df, 'circumplex.valence', linear_interpol)
+cleaned_df = missing_imputation(cleaned_df, 'circumplex.arousal', linear_interpol)
+# still one value missing in circumplex.valence; try backward interpol
+cleaned_df = missing_imputation(cleaned_df, 'circumplex.valence', backward_interpol)
+print(cleaned_df.head(20))
+print_general_info(cleaned_df)
