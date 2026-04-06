@@ -234,13 +234,13 @@ def plot_valence_per_user_with_missing(df, varname: str = 'circumplex.valence'):
         ax = axes[i]
 
         user_df = valence_df[valence_df['id'] == uid].copy()
-        # aggregate duplicate dates
-        user_daily = user_df.groupby('date')['value'].mean()
 
-        present = user_daily[user_daily.notna()]   # rows with actual values
-        missing = user_daily[user_daily.isna()]    # rows where date exists but value is NaN
+        user_series = user_df.set_index('date')['value']
 
-        n_total = len(user_daily)
+        present = user_series[user_series.notna()]   # rows with actual values
+        missing = user_series[user_series.isna()]    # rows where date exists but value is nan
+
+        n_total = len(user_series)
         n_missing = len(missing)
         print(f"- {uid}: {n_missing} missing / {n_total} total ({n_missing/n_total:.1%})")
 
@@ -248,7 +248,7 @@ def plot_valence_per_user_with_missing(df, varname: str = 'circumplex.valence'):
         ax.plot(present.index, present.values, marker='o', linestyle='-',
                 color='steelblue', linewidth=1.2, markersize=3)
 
-        # mark truly missing dates as red dots on x-axis
+        # mark missing rows as red dots on x-axis
         for md in missing.index:
             ax.plot(md, 0, marker='o', color='red',
                     markersize=4, zorder=5, transform=ax.get_xaxis_transform())
@@ -281,7 +281,7 @@ plot_valence_per_user_with_missing(df, varname="circumplex.arousal")
 # print number of distinct ids
 # print number of days
 # find any missing values
-
+print("\n\n")
 plot_mood_vs_screentime(df)
 plot_valence_and_arousal_vs_screentime(df)
 
