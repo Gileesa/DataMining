@@ -3,8 +3,10 @@
 #
 
 
-import pandas as pd
+import pandas as pd 
+import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 df = pd.read_csv('dataset_mood_smartphone.csv')
 #  make datetime
@@ -141,6 +143,77 @@ def missing_imputation(df, varname: str, imputation_func):
     new_df.loc[mask, 'value'] = subset['value']
 
     return new_df
+
+
+def plot_valence_per_user_with_missing(df, varname: str = 'circumplex.valence'):
+    valence_df = df[df['variable'] == varname].copy()
+    valence_df = valence_df.sort_values(['id', 'date'])
+    ids = valence_df['id'].unique()
+
+    ncols = 6
+    nrows = int(np.ceil(len(ids) / ncols))
+
+    fig, axes = plt.subplots(nrows, ncols, figsize=(20, nrows * 3), sharey=True)
+    axes = axes.flatten()
+
+    print(f"====MISSING VALUE INFO for {varname}=======")
+    for i, uid in enumerate(ids):
+        ax = axes[i]
+        user_df = valence_df[valence_df['id'] == uid].set_index('date')['value']
+        user_daily = user_df.groupby(level=0).mean()
+        full_range = pd.date_range(user_daily.index.min(), user_daily.index.max(), freq='D')
+        user_full = user_daily.reindex(full_range)
+
+        #print missing values
+        n_total = len(user_full)
+        n_missing = user_full.isna().sum()
+        frac = n_missing / n_total
+        print(f"- {uid}: {n_missing} missing / {n_total} total ({frac:.1%})")
+
+        ax.plot(user_full.index, user_full.values, marker='o', linestyle='-', color='steelblue', linewidth=1.2, markersize=3)
+
+        # Dashed red bridge + rug dots for gaps
+        in_gap = False
+        gap_start_val = None
+        gap_start_date = None
+
+        for date, val in user_full.items():
+            if pd.isna(val):
+                if not in_gap:
+                    before = user_full[:date].dropna()
+                    if not before.empty:
+                        gap_start_date = before.index[-1]
+                        gap_start_val = before.iloc[-1]
+                    in_gap = True
+                ax.plot(date, 0, marker='o', color='red',
+                        markersize=4, zorder=5, transform=ax.get_xaxis_transform())
+            else:
+                if in_gap and gap_start_date is not None:
+                    ax.plot([gap_start_date, date], [gap_start_val, val],
+                            color='red', linestyle='--', linewidth=1.0, zorder=4)
+                in_gap = False
+                gap_start_val = None
+                gap_start_date = None
+
+        ax.set_title(str(uid), fontsize=9)
+        ax.xaxis.set_major_locator(mdates.MonthLocator())
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %y'))
+        ax.tick_params(axis='x', labelrotation=45, labelsize=7)
+        ax.tick_params(axis='y', labelsize=7)
+        ax.grid(True, alpha=0.3)
+
+    # Hide any unused subplots
+    for j in range(len(ids), len(axes)):
+        axes[j].set_visible(False)
+
+    fig.suptitle('circumplex.valence per user — missing values in red', fontsize=12, y=1.01)
+    plt.tight_layout()
+    plt.savefig(f'all_ids_{varname}.png')
+    plt.show()
+
+
+plot_valence_per_user_with_missing(df)
+plot_valence_per_user_with_missing(df, varname="circumplex.arousal")
 
 # TODO
 # histogram of mood including mean, median, min and max value
