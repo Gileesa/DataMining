@@ -238,6 +238,70 @@ def plot_cleaned_per_id(df_clean, original_df, value_col='value', save_path=None
         plt.savefig(save_path)
     plt.show()
 
+
+
+
+def create_window_dataset_from_clean(
+    df1,
+    df2,
+    feature1='mood',
+    feature2='screen',
+    window_size=5,
+    save_path='csv_files/some_mood_prediction_dataset.csv'
+):
+    """
+    Create sliding window dataset using pre-cleaned mood + screen data.
+    """
+
+    # rename columns
+    mood_df = df1[['id', 'date', 'value']].rename(columns={'value': feature1})
+    screen_df = df2[['id', 'date', 'value']].rename(columns={'value': feature2})
+
+    # merge on id + date
+    df = pd.merge(mood_df, screen_df, on=['id', 'date'], how='inner')
+
+    df = df.sort_values(['id', 'date'])
+
+    all_rows = []
+
+    # creating windows
+    for uid, user_df in df.groupby('id'):
+        user_df = user_df.sort_values('date').reset_index(drop=True)
+
+        if len(user_df) < window_size + 1:
+            continue
+
+        for i in range(window_size, len(user_df)):
+            row = {}
+
+            # id + date (prediction day)
+            row['id'] = uid
+            row['date'] = user_df.loc[i, 'date']
+
+            # feature1 window
+            for j in range(window_size):
+                row[f'{feature1}_t-{window_size-j}'] = user_df.loc[i - window_size + j, feature1]
+
+            # feature 2 window
+            for j in range(window_size):
+                row[f'{feature2}_t-{window_size-j}'] = user_df.loc[i - window_size + j, feature2]
+
+            # creating target
+            row['target'] = user_df.loc[i, feature1]
+
+            all_rows.append(row)
+
+    dataset = pd.DataFrame(all_rows)
+
+    # ---- SAVE ----
+    dataset.to_csv(save_path, index=False)
+    print(f"\nSaved dataset to: {save_path}")
+    print(f"Shape: {dataset.shape}")
+
+    return dataset
+
+
+
 df = pd.read_csv('dataset_mood_smartphone.csv')
 #  make datetime
 df['date'] = pd.to_datetime(df['time'], errors='coerce')
@@ -261,3 +325,12 @@ clean_dates_screentime = clean_time_series(cleaned_df, varname = 'screen')
 print('\n\n====== IMPUTED DATES HEAD =======\n', clean_dates_mood.head(20))
 plot_cleaned_per_id(clean_dates_mood, cleaned_df, save_path='Figures/dates_mood.png')
 plot_cleaned_per_id(clean_dates_screentime, cleaned_df, save_path='Figures/dates_screen.png')
+
+
+df_windows = create_window_dataset_from_clean(
+    clean_dates_mood,
+    clean_dates_screentime,
+    window_size=5,
+    save_path='csv_files/mood_window_dataset.csv'
+)
+print(df_windows.head(20))
