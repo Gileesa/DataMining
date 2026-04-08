@@ -268,10 +268,6 @@ def plot_valence_per_user_with_missing(df, varname: str = 'circumplex.valence'):
     plt.savefig(f'Figures/missinvals_all_ids_{varname}.png')
     plt.show()
 
-plot_valence_per_user_full_calendar(df)
-plot_valence_per_user_full_calendar(df, varname="circumplex.arousal")
-plot_valence_per_user_with_missing(df)
-plot_valence_per_user_with_missing(df, varname="circumplex.arousal")
 
 
 
@@ -282,8 +278,15 @@ plot_valence_per_user_with_missing(df, varname="circumplex.arousal")
 # print number of days
 # find any missing values
 print("\n\n")
-plot_mood_vs_screentime(df)
-plot_valence_and_arousal_vs_screentime(df)
+# plot_mood_vs_screentime(df)
+# plot_valence_and_arousal_vs_screentime(df)
+
+plot_valence_per_user_full_calendar(df)
+plot_valence_per_user_full_calendar(df, varname="circumplex.arousal")
+plot_valence_per_user_full_calendar(df, varname="mood")
+plot_valence_per_user_with_missing(df)
+plot_valence_per_user_with_missing(df, varname="circumplex.arousal")
+plot_valence_per_user_with_missing(df, varname="mood")
 
 histogram_of_mood(df)
 print("\n\n")
