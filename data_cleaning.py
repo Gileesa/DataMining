@@ -2,114 +2,11 @@
 #
 #
 
-
 import pandas as pd 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-
-df = pd.read_csv('dataset_mood_smartphone.csv')
-#  make datetime
-df['date'] = pd.to_datetime(df['time'], errors='coerce')
-
-print(df.head(20))
-
-
-# plot average mood vs average screen time for each [id]
-def plot_mood_vs_screentime(df):
-    # Create pivot table of retrieve columns 'screen' and 'mood'
-    # also takes average value of for each id over all dates
-    avg_df = df.pivot_table(index='id', columns='variable', values='value', aggfunc='mean').reset_index()
-
-    # Plot
-    plt.figure(figsize=(8,6))
-    plt.scatter(avg_df['screen'], avg_df['mood'], color='blue')
-    plt.xlabel('Average Screen Time')
-    plt.ylabel('Average Mood')
-    plt.title('Average Mood vs Average Screen Time per User')
-    plt.grid(True)
-    plt.show()
-
-
-def plot_valence_and_arousal_vs_screentime(df):
-    # get average for screen and arousal/valence
-    avg_df_arousal = df.pivot_table(index='id', columns='variable', values='value', aggfunc='mean').reset_index()
-
-    # Plot
-    plt.figure(figsize=(8,6))
-    plt.scatter(avg_df_arousal['screen'], avg_df_arousal['circumplex.arousal'], color='blue', label="arousal")
-    plt.xlabel('Average Screen Time')
-    plt.ylabel('Average Arousal')
-    plt.title('Average Arousal and Valence vs Average Screen Time per User')
-    # plt.legend()
-    plt.grid(True)
-    plt.show()
-
-    # Plot
-    plt.figure(figsize=(8,6))
-    plt.scatter(avg_df_arousal['screen'], avg_df_arousal['circumplex.valence'], color='red', label="valence")
-    plt.xlabel('Average Screen Time')
-    plt.ylabel('Average Valence')
-    plt.title('Average Valence vs Average Screen Time per User')
-    # plt.legend()
-    plt.grid(True)
-    plt.show()
-
-
-def histogram_of_mood(df):
-    mood_df= df[df['variable']=='mood']['value']
-    plt.hist(mood_df, bins=15, color='lightpink', edgecolor='red')
-    plt.title('Histogram of Mood')
-    plt.xlabel('Mood')
-    plt.ylabel('Frequency')
-    plt.show()
- 
-    print("Mood statistics:")
-    print("Mean:", mood_df.mean())
-    print("Median:", mood_df.median())
-    print("Min:", mood_df.min())
-    print("Max:", mood_df.max())
-
-
-
-def histogram_dates(df):
-
-    plt.figure(figsize=(8,5))
-    plt.hist(df['date'].dropna(), bins=15, color='lightgreen', edgecolor='black')
-    plt.title('Histogram of Dates')
-    plt.xlabel('Date')
-    plt.ylabel('Frequency')
-    plt.show()
-
-    # Date statistics
-    print("Date statistics:")
-    print("Mean:", df['date'].mean())
-    print("Median:", df['date'].median())
-    print("Min:", df['date'].min())
-    print("Max:", df['date'].max())
-
-
-def print_general_info(df):
-    print("\n\n====== GENERAL INFO==========")
-    # print all distict options in 'variable'
-    distinct_variables = df['variable'].unique().tolist()
-    print(distinct_variables)
-    
-    # Printing general info
-    num_ids = df['id'].nunique()
-    print("\nNumber of distinct IDs:", num_ids)
-    num_days = df['date'].dt.date.nunique()
-    print("Number of distinct days:", num_days)
-    missing_values = df.isnull().sum()
-    print("\nMissing values per column:\n", missing_values)
-
-    # we can see lots of 'value' have missing values
-    # find missing rows and count number per variable
-    missing_value_rows = df[df['value'].isnull()]
-    missing_by_variable = missing_value_rows['variable'].value_counts()
-    print("Missing values per variable:")
-    print(missing_by_variable) # circumplex.valence: 156, circumplex.arousal: 46
-    print("==========================")
+from data_exploration import print_general_info
 
 def linear_interpol(x):
     ''' does (previous_point + next_point)/2 only when both exist '''
@@ -145,160 +42,185 @@ def missing_imputation(df, varname: str, imputation_func):
     return new_df
 
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-
-def plot_valence_per_user_full_calendar(df, varname: str = 'circumplex.valence'):
-    # filter variable
-    valence_df = df[df['variable'] == varname].copy()
+def remove_extremes(df, varname='screen', max_value=700):
+    '''Removes extreme values and replaces them with average of neighbours'''
     
+    new_df = df.copy()
+
+    # filter only the variable of interest
+    mask = new_df['variable'] == varname
+
+    # sort by id and date
+    subset = new_df.loc[mask].sort_values(['id', 'date']).copy()
+
     # ensure datetime
-    valence_df['date'] = pd.to_datetime(valence_df['date'])
-    
-    # extract date only (drop time!)
-    valence_df['date_day'] = valence_df['date'].dt.floor('D')
-    
-    # sort
-    valence_df = valence_df.sort_values(['id', 'date_day'])
-    ids = valence_df['id'].unique()
+    subset['date'] = pd.to_datetime(subset['date'])
 
-    ncols = 6
-    nrows = int(np.ceil(len(ids) / ncols))
+    # process per ID
+    def fix_extremes(group):
+        values = group['value'].copy()
 
-    fig, axes = plt.subplots(nrows, ncols, figsize=(20, nrows * 3), sharey=True)
-    axes = axes.flatten()
+        # mark extremes
+        extreme_mask = values > max_value
 
-    print(f"==== MISSING DATE INFO for {varname} =======")
-    
-    for i, uid in enumerate(ids):
-        ax = axes[i]
+        # temporarily set extremes to NaN
+        values[extreme_mask] = np.nan
 
-        # subset per user
-        user_df = valence_df[valence_df['id'] == uid]
+        # interpolate using neighbors (linear = average if single gap)
+        values = values.interpolate(method='linear')
 
-        # average per DAY (this is the key fix)
+        return values
+
+    # apply per user
+    subset['value'] = subset.groupby('id', group_keys=False).apply(fix_extremes)
+
+    # put values back
+    new_df.loc[mask, 'value'] = subset['value']
+
+    return new_df
+
+
+
+def clean_time_series(
+    df,
+    varname='mood',
+    max_gap=3, #max gap of days
+    smooth=False
+):
+    '''
+    Function that can impute missing date values for 'varname'. 
+    In addition, this function cuts away parts on the head and tail of the timeseries
+    that have a gap of >3 days with the 'main body' of the timeseries.
+    '''
+    df = df[df['variable'] == varname].copy()
+    df['date_day'] = df['date'].dt.floor('D')
+    cleaned_dfs = []
+    for uid, user_df in df.groupby('id'):
+
+        #compute daily average and std
         user_daily = (
             user_df
             .groupby('date_day')['value']
-            .mean()
+            .agg(value='mean', value_std='std')
             .sort_index()
         )
+        if user_daily.empty:
+            # skip rest of loop
+            continue 
 
-        # full calendar (daily)
+        # find range of dates
         full_range = pd.date_range(
             user_daily.index.min(),
             user_daily.index.max(),
             freq='D'
         )
-
         user_full = user_daily.reindex(full_range)
 
-        # missing stats
-        n_total = len(user_full)
-        n_missing = user_full.isna().sum()
-        frac = n_missing / n_total
-        print(f"- {uid}: {n_missing} missing / {n_total} total ({frac:.1%})")
+        # trim head and tail of data if there is a large gap
+        is_valid = ~user_full['value'].isna()
+        valid_idx = np.where(is_valid)[0] #find dates with data
 
-        # plot main line
-        ax.plot(
-            user_full.index,
-            user_full.values,
-            marker='o',
-            linestyle='-',
-            linewidth=1.2,
-            color="lightpink",
-            markersize=3
-        )
+        if len(valid_idx) == 0:
+            continue
 
-        # highlight missing values
-        in_gap = False
-        gap_start_val = None
-        gap_start_date = None
+        # find distance (data-wise) between existing data points
+        distance_between_data = np.diff(valid_idx) 
+        split_points = np.where(distance_between_data > max_gap)[0]
 
-        for date, val in user_full.items():
-            if pd.isna(val):
-                if not in_gap:
-                    before = user_full[:date].dropna()
-                    if not before.empty:
-                        gap_start_date = before.index[-1]
-                        gap_start_val = before.iloc[-1]
-                    in_gap = True
+        # split data in continuous chunks
+        # split at positions in split_points
+        segments = []
+        start = 0
+        for sp in split_points:
+            segments.append(valid_idx[start:sp+1])
+            start = sp + 1
+        segments.append(valid_idx[start:])
 
-                ax.plot(
-                    date, 0,
-                    marker='o',
-                    markersize=4,
-                    zorder=5,
-                    transform=ax.get_xaxis_transform()
-                )
+        # trim isolated head/tail segments, keep everything in between
+        # only remove the first segment if it is separated from the rest by a large gap
+        # only remove the last segment if it is separated from the rest by a large gap
+        if len(segments) > 1:
+            segments = segments[1:]   # drop isolated head
+        if len(segments) > 1:
+            segments = segments[:-1]  # drop isolated tail
 
-            else:
-                if in_gap and gap_start_date is not None:
-                    ax.plot(
-                        [gap_start_date, date],
-                        [gap_start_val, val],
-                        linestyle='--',
-                        linewidth=1.0,
-                        color='red',
-                        zorder=4
-                    )
-                in_gap = False
-                gap_start_val = None
-                gap_start_date = None
+        start_idx = segments[0][0]
+        end_idx = segments[-1][-1]
+        user_trimmed = user_full.iloc[start_idx:end_idx+1]
 
-        ax.set_title(str(uid), fontsize=9)
-        ax.xaxis.set_major_locator(mdates.MonthLocator())
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %y'))
-        ax.tick_params(axis='x', labelrotation=45, labelsize=7)
-        ax.tick_params(axis='y', labelsize=7)
-        ax.grid(True, alpha=0.3)
+        # impute missing values (mean only — std stays NaN for imputed days)
+        user_imputed = user_trimmed.copy()
+        user_imputed['value'] = user_trimmed['value'].interpolate(method='time')
 
-    # hide unused axes
-    for j in range(len(ids), len(axes)):
-        axes[j].set_visible(False)
+        # print imputations for debug
+        imputed_mask = user_trimmed['value'].isna() & user_imputed['value'].notna()
+        for date, val in user_imputed.loc[imputed_mask, 'value'].items():
+            print(f"[IMPUTED] ID={uid} | date={date.date()} | value={val:.3f}")
 
-    fig.suptitle(f'{varname} per user — missing values in red', fontsize=12, y=0.98)
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.savefig(f'Figures/full_calendar_all_ids_{varname}.png')
-    plt.show()
+        # smoothing
+        # since data is spiky, we can make all values be the average of its neighbours
+        # this reduces noise, but means loss of data
+        if smooth:
+            user_imputed['value'] = user_imputed['value'].rolling(
+                window=3,
+                center=True,
+                min_periods=1
+            ).mean()
 
-def plot_valence_per_user_with_missing(df, varname: str = 'circumplex.valence'):
-    # all rows for this variable, including those with NaN value
-    valence_df = df[df['variable'] == varname].copy()
-    valence_df = valence_df.sort_values(['id', 'date'])
-    ids = valence_df['id'].unique()
+        # create df
+        clean_df = pd.DataFrame({
+            'id': uid,
+            'date': user_imputed.index,
+            'value': user_imputed['value'].values,
+            'value_std': user_imputed['value_std'].values  # NaN for imputed days
+        })
+        cleaned_dfs.append(clean_df)
+    result = pd.concat(cleaned_dfs, ignore_index=True)
+    return result
 
+
+def plot_cleaned_per_id(df_clean, original_df, value_col='value', save_path=None):
+    """
+    Plot the cleaned time series per ID and prints how many days were removed (tail/head) and added (interpolation)
+    params:
+    - df_clean: DataFrame with columns ['id', 'date', value_col]
+    - original_df: DataFrame with raw data, must contain ['id', 'date', 'variable']
+    - value_col: column name containing the numeric value to plot
+    - save_path: optional path to save the figure
+    returns:
+    - None
+    """
+    ids = df_clean['id'].unique()
     ncols = 6
     nrows = int(np.ceil(len(ids) / ncols))
     fig, axes = plt.subplots(nrows, ncols, figsize=(20, nrows * 3), sharey=True)
     axes = axes.flatten()
 
-    print(f"==== MISSING VALUE INFO for {varname} =======")
+    # filter original to mood only, normalize dates to day
+    original_mood = original_df[original_df['variable'] == 'mood'].copy()
+    original_mood['date'] = pd.to_datetime(original_mood['date']).dt.floor('D')
+    df_clean['date'] = pd.to_datetime(df_clean['date']).dt.floor('D')
+
+    print(f'\n\n ==== REMOVED DATES INFO {save_path} =======')
     for i, uid in enumerate(ids):
         ax = axes[i]
+        user_clean = df_clean[df_clean['id'] == uid]
+        user_orig  = original_mood[original_mood['id'] == uid]
 
-        user_df = valence_df[valence_df['id'] == uid].copy()
+        original_dates = set(user_orig['date'].unique())
+        cleaned_dates  = set(user_clean['date'].unique())
 
-        user_series = user_df.set_index('date')['value']
+        n_original = len(original_dates)
+        n_cleaned  = len(cleaned_dates)
+        n_removed  = len(original_dates - cleaned_dates)
+        n_added    = len(cleaned_dates - original_dates)
 
-        present = user_series[user_series.notna()]   # rows with actual values
-        missing = user_series[user_series.isna()]    # rows where date exists but value is nan
+        print(f"- ID {uid}: {n_original} original days → {n_cleaned} cleaned days "
+              f"| removed (tail/head) {n_removed}, added (interpol) {n_added}")
 
-        n_total = len(user_series)
-        n_missing = len(missing)
-        print(f"- {uid}: {n_missing} missing / {n_total} total ({n_missing/n_total:.1%})")
-
-        # plot existing values
-        ax.plot(present.index, present.values, marker='o', linestyle='-',
-                color='orange', linewidth=1.2, markersize=3)
-
-        # mark missing rows as red dots on x-axis
-        for md in missing.index:
-            ax.plot(md, 0, marker='o', color='red',
-                    markersize=4, zorder=5, transform=ax.get_xaxis_transform())
-
+        user_clean_sorted = user_clean.sort_values('date')
+        ax.plot(user_clean_sorted['date'], user_clean_sorted[value_col],
+                marker='o', linestyle='-', color='gold', linewidth=1.2, markersize=3)
         ax.set_title(str(uid), fontsize=9)
         ax.xaxis.set_major_locator(mdates.MonthLocator())
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %y'))
@@ -306,41 +228,36 @@ def plot_valence_per_user_with_missing(df, varname: str = 'circumplex.valence'):
         ax.tick_params(axis='y', labelsize=7)
         ax.grid(True, alpha=0.3)
 
+    print('number of ids: ', len(ids))
     for j in range(len(ids), len(axes)):
         axes[j].set_visible(False)
 
-    fig.suptitle(f'{varname} per user — missing values in red', fontsize=12, y=1.01)
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plt.savefig(f'Figures/missinvals_all_ids_{varname}.png')
+    fig.suptitle(f'Cleaned {value_col} per ID', fontsize=12, y=0.96)
+    plt.tight_layout()
+    if save_path is not None:
+        plt.savefig(save_path)
     plt.show()
 
+df = pd.read_csv('dataset_mood_smartphone.csv')
+#  make datetime
+df['date'] = pd.to_datetime(df['time'], errors='coerce')
 
-
-
-# TODO
-# histogram of mood including mean, median, min and max value
-# histogram of date including mean, median, min and max value
-# print number of distinct ids
-# print number of days
-# find any missing values
-print("\n\n")
-# plot_mood_vs_screentime(df)
-# plot_valence_and_arousal_vs_screentime(df)
-
-plot_valence_per_user_full_calendar(df)
-plot_valence_per_user_full_calendar(df, varname="circumplex.arousal")
-plot_valence_per_user_full_calendar(df, varname="mood")
-plot_valence_per_user_with_missing(df)
-plot_valence_per_user_with_missing(df, varname="circumplex.arousal")
-plot_valence_per_user_with_missing(df, varname="mood")
-
-histogram_of_mood(df)
-print("\n\n")
-histogram_dates(df)
-
+#====== add missing row values =======
 cleaned_df = missing_imputation(df, 'circumplex.valence', linear_interpol)
 cleaned_df = missing_imputation(cleaned_df, 'circumplex.arousal', linear_interpol)
 # still one value missing in circumplex.valence; try backward interpol
 cleaned_df = missing_imputation(cleaned_df, 'circumplex.valence', backward_interpol)
+print('\n\n====== IMPUTED MISSING ROW VALUES HEAD =======\n', cleaned_df.head(20))
 print(cleaned_df.head(20))
 print_general_info(cleaned_df)
+
+#==== remove extreme screen times, replace with neighbour average ======
+cleaned_df = remove_extremes(cleaned_df)
+
+#====== add missing dates =========
+# + cut off parts of timeseries with large gaps
+clean_dates_mood = clean_time_series(cleaned_df)
+clean_dates_screentime = clean_time_series(cleaned_df, varname = 'screen')
+print('\n\n====== IMPUTED DATES HEAD =======\n', clean_dates_mood.head(20))
+plot_cleaned_per_id(clean_dates_mood, cleaned_df, save_path='Figures/dates_mood.png')
+plot_cleaned_per_id(clean_dates_screentime, cleaned_df, save_path='Figures/dates_screen.png')
