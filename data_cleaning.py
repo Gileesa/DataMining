@@ -145,9 +145,23 @@ def missing_imputation(df, varname: str, imputation_func):
     return new_df
 
 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+
 def plot_valence_per_user_full_calendar(df, varname: str = 'circumplex.valence'):
+    # filter variable
     valence_df = df[df['variable'] == varname].copy()
-    valence_df = valence_df.sort_values(['id', 'date'])
+    
+    # ensure datetime
+    valence_df['date'] = pd.to_datetime(valence_df['date'])
+    
+    # extract date only (drop time!)
+    valence_df['date_day'] = valence_df['date'].dt.floor('D')
+    
+    # sort
+    valence_df = valence_df.sort_values(['id', 'date_day'])
     ids = valence_df['id'].unique()
 
     ncols = 6
@@ -157,29 +171,48 @@ def plot_valence_per_user_full_calendar(df, varname: str = 'circumplex.valence')
     axes = axes.flatten()
 
     print(f"==== MISSING DATE INFO for {varname} =======")
+    
     for i, uid in enumerate(ids):
         ax = axes[i]
 
-        # get df for each user ID
-        # map date to value"
-        user_df = valence_df[valence_df['id'] == uid].set_index('date')['value']
-        # if two values on the same datetime, take the mean:
-        user_daily = user_df.groupby(level=0).mean()
-        # create complete calendar, including missing dates
-        full_range = pd.date_range(user_daily.index.min(), user_daily.index.max(), freq='D')
-        # give nan-values to missing dates
+        # subset per user
+        user_df = valence_df[valence_df['id'] == uid]
+
+        # average per DAY (this is the key fix)
+        user_daily = (
+            user_df
+            .groupby('date_day')['value']
+            .mean()
+            .sort_index()
+        )
+
+        # full calendar (daily)
+        full_range = pd.date_range(
+            user_daily.index.min(),
+            user_daily.index.max(),
+            freq='D'
+        )
+
         user_full = user_daily.reindex(full_range)
 
-        #print missing values
+        # missing stats
         n_total = len(user_full)
         n_missing = user_full.isna().sum()
         frac = n_missing / n_total
         print(f"- {uid}: {n_missing} missing / {n_total} total ({frac:.1%})")
 
-        # plot existing data points
-        ax.plot(user_full.index, user_full.values, marker='o', linestyle='-', color='steelblue', linewidth=1.2, markersize=3)
+        # plot main line
+        ax.plot(
+            user_full.index,
+            user_full.values,
+            marker='o',
+            linestyle='-',
+            linewidth=1.2,
+            color="lightpink",
+            markersize=3
+        )
 
-        # plot missing data
+        # highlight missing values
         in_gap = False
         gap_start_val = None
         gap_start_date = None
@@ -192,12 +225,25 @@ def plot_valence_per_user_full_calendar(df, varname: str = 'circumplex.valence')
                         gap_start_date = before.index[-1]
                         gap_start_val = before.iloc[-1]
                     in_gap = True
-                ax.plot(date, 0, marker='o', color='red',
-                        markersize=4, zorder=5, transform=ax.get_xaxis_transform())
+
+                ax.plot(
+                    date, 0,
+                    marker='o',
+                    markersize=4,
+                    zorder=5,
+                    transform=ax.get_xaxis_transform()
+                )
+
             else:
                 if in_gap and gap_start_date is not None:
-                    ax.plot([gap_start_date, date], [gap_start_val, val],
-                            color='red', linestyle='--', linewidth=1.0, zorder=4)
+                    ax.plot(
+                        [gap_start_date, date],
+                        [gap_start_val, val],
+                        linestyle='--',
+                        linewidth=1.0,
+                        color='red',
+                        zorder=4
+                    )
                 in_gap = False
                 gap_start_val = None
                 gap_start_date = None
@@ -209,12 +255,12 @@ def plot_valence_per_user_full_calendar(df, varname: str = 'circumplex.valence')
         ax.tick_params(axis='y', labelsize=7)
         ax.grid(True, alpha=0.3)
 
-    # Hide any unused subplots
+    # hide unused axes
     for j in range(len(ids), len(axes)):
         axes[j].set_visible(False)
 
-    fig.suptitle(f'{varname} per user — missing values in red', fontsize=12, y=1.01)
-    plt.tight_layout()
+    fig.suptitle(f'{varname} per user — missing values in red', fontsize=12, y=0.98)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.savefig(f'Figures/full_calendar_all_ids_{varname}.png')
     plt.show()
 
@@ -246,7 +292,7 @@ def plot_valence_per_user_with_missing(df, varname: str = 'circumplex.valence'):
 
         # plot existing values
         ax.plot(present.index, present.values, marker='o', linestyle='-',
-                color='steelblue', linewidth=1.2, markersize=3)
+                color='orange', linewidth=1.2, markersize=3)
 
         # mark missing rows as red dots on x-axis
         for md in missing.index:
@@ -264,7 +310,7 @@ def plot_valence_per_user_with_missing(df, varname: str = 'circumplex.valence'):
         axes[j].set_visible(False)
 
     fig.suptitle(f'{varname} per user — missing values in red', fontsize=12, y=1.01)
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.savefig(f'Figures/missinvals_all_ids_{varname}.png')
     plt.show()
 
