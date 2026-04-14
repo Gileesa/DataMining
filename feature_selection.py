@@ -22,7 +22,7 @@ def mood_to_classification(mood):
 
 df['target_classification'] = df['target'].apply(mood_to_classification)
 
-# Time-aware split (per user, then concatenate)
+# Time-aware split per user
 def split_id_per_time(df, test_ratio=TEST_RATIO, date_col=DATE_COL):
     """
     For each user: sort by date, take first rows as train,
