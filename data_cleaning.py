@@ -41,51 +41,67 @@ def missing_imputation(df, varname: str, imputation_func):
 
     return new_df
 
+def remove_extremes(df, varname='screen', min_value=0, max_value=700):
 
-def remove_extremes(df, varname='screen', max_value=700):
-    '''Removes extreme values and replaces them with average of neighbours'''
-    
     new_df = df.copy()
-
-    # filter only the variable of interest
     mask = new_df['variable'] == varname
 
-    # sort by id and date
-    subset = new_df.loc[mask].sort_values(['id', 'date']).copy()
+    values = new_df.loc[mask, 'value']
 
-    # ensure datetime
-    subset['date'] = pd.to_datetime(subset['date'])
+    extreme_mask = (values > max_value) | (values < min_value)
 
-    # process per ID
-    def fix_extremes(group):
-        values = group['value'].copy()
+    new_df.loc[mask, 'value'] = values.mask(extreme_mask)
 
-        # mark extremes
-        extreme_mask = values > max_value
-
-        # temporarily set extremes to NaN
-        values[extreme_mask] = np.nan
-
-        # interpolate using neighbors (linear = average if single gap)
-        values = values.interpolate(method='linear')
-
-        return values
-
-    # apply per user
-    subset['value'] = subset.groupby('id', group_keys=False).apply(fix_extremes)
-
-    # put values back
-    new_df.loc[mask, 'value'] = subset['value']
+    new_df.loc[mask, 'value'] = (
+        new_df.loc[mask]
+        .groupby('id')['value']
+        .transform(lambda x: x.interpolate())
+    )
 
     return new_df
 
+def plot_histogram(df, varname, uid=None):
+    data = df['value'].dropna()
+
+    min_val = data.min()
+    max_val = data.max()
+
+    plt.figure(figsize=(8,5))
+    plt.hist(data, bins=15, color='lightpink', edgecolor='red')
+
+    # title with varname + user id
+    title = f"Histogram of {varname}"
+    if uid is not None:
+        title += f" (ID: {uid})"
+
+    plt.title(title)
+    plt.xlabel(varname)
+    plt.ylabel('Frequency')
+
+    plt.text(
+        0.95, 0.95,
+        f"Min: {min_val:.2f}\nMax: {max_val:.2f}",
+        transform=plt.gca().transAxes,
+        ha='right',
+        va='top',
+        bbox=dict(facecolor='white', alpha=0.7)
+    )
+
+    plt.show()
+
+    print(f"\n{title} statistics:")
+    print("Mean:", data.mean())
+    print("Median:", data.median())
+    print("Min:", min_val)
+    print("Max:", max_val)
 
 
 def clean_time_series(
     df,
     varname='mood',
     max_gap=3, #max gap of days
-    smooth=False
+    smooth=False,
+    plotting: bool=False
 ):
     '''
     Function that can impute missing date values for 'varname'. 
@@ -107,6 +123,9 @@ def clean_time_series(
         if user_daily.empty:
             # skip rest of loop
             continue 
+        elif plotting:
+            # plot histogram of values to see range
+            plot_histogram(user_daily, varname, uid)
 
         # find range of dates
         full_range = pd.date_range(
@@ -324,8 +343,11 @@ print('\n\n====== IMPUTED MISSING ROW VALUES HEAD =======\n', cleaned_df.head(20
 print(cleaned_df.head(20))
 print_general_info(cleaned_df)
 
-#==== remove extreme screen times, replace with neighbour average ======
-cleaned_df = remove_extremes(cleaned_df)
+#==== remove extreme values, replace with neighbour average (linear interpol) ======
+cleaned_df = remove_extremes(cleaned_df, varname='screen', max_value=700)
+cleaned_df = remove_extremes(cleaned_df, varname='appCat.social', max_value=1000)
+cleaned_df = remove_extremes(cleaned_df, varname='appCat.game', max_value=1000)
+cleaned_df = remove_extremes(cleaned_df, varname='appCat.entertaiment', max_value=1000)
 
 #====== add missing dates =========
 # + cut off parts of timeseries with large gaps
@@ -337,6 +359,7 @@ clean_dates_activity = clean_time_series(cleaned_df, varname = 'activity')
 clean_dates_social = clean_time_series(cleaned_df, varname = 'appCat.social')
 clean_dates_game = clean_time_series(cleaned_df, varname = 'appCat.game')
 clean_dates_entertainment = clean_time_series(cleaned_df, varname = 'appCat.entertainment')
+
 print('\n\n====== IMPUTED DATES HEAD =======\n', clean_dates_mood.head(20))
 plot_cleaned_per_id(clean_dates_mood, cleaned_df, save_path='Figures/dates_mood.png')
 plot_cleaned_per_id(clean_dates_screentime, cleaned_df, feature='screen', save_path='Figures/dates_screen.png')
