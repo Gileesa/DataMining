@@ -89,7 +89,8 @@ plt.title("Random Forest – Confusion Matrix")
 plt.xlabel("Predicted"); plt.ylabel("Actual")
 plt.tight_layout()
 plt.savefig("DataMining/figures/rf_confusion_matrix.png", dpi=150)
-plt.show()
+plt.savefig("DataMining/figures/rf_confusion_matrix.pdf")
+#plt.show()
 
 # Feature importance plot
 feat_imp = pd.Series(best_rf.feature_importances_, index=FEATURE_COLS)
@@ -99,7 +100,8 @@ feat_imp.plot(kind='barh', figsize=(7, 6),title="RF Feature Importances")
 
 plt.tight_layout()
 plt.savefig("DataMining/figures/rf_feature_importance.pdf")
-plt.show()
+plt.savefig("DataMining/figures/rf_feature_importance.png", dpi = 150)
+# plt.show()
 
 # Convert predicted numbers back to class names
 predicted_labels = le.inverse_transform(y_pred_rf)
