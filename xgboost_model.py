@@ -57,7 +57,8 @@ xgb_search = RandomizedSearchCV(estimator = XGBClassifier(
                                 scoring='f1_macro',
                                 n_jobs=-1,
                                 random_state=RANDOM_STATE,
-                                verbose=1
+                                verbose=1,
+                                error_score = 'raise'
                                 )
 
 # Train the model on the training set
@@ -73,6 +74,10 @@ y_pred_xgb = best_xgb.predict(X_test)
 print("\n── Test set results ──")
 print(f"Accuracy : {accuracy_score(y_test, y_pred_xgb):.4f}")
 print(f"Macro F1 : {f1_score(y_test, y_pred_xgb, average='macro'):.4f}")
+
+print("Best params:", xgb_search.best_params_)
+print("Best score:", xgb_search.best_score_)
+print("Mean test scores:", xgb_search.cv_results_['mean_test_score'])
 
 print("\nClassification report:")
 all_labels = le.transform(le.classes_)
@@ -114,6 +119,7 @@ actual_labels = le.inverse_transform(y_test)
 results_df = pd.DataFrame()
 results_df['id'] = test_df['id'].values
 results_df['date'] = test_df['date'].values
+results_df['actual_value'] = test_df['target'].values
 results_df['actual_class'] = actual_labels
 results_df['predicted_class'] = predicted_labels
 
@@ -122,3 +128,12 @@ print(results_df.head(20))
 
 # Save to CSV
 results_df.to_csv("DataMining/csv_files/xgb_predictions.csv", index=False)
+
+xgb_results = pd.DataFrame({
+    'Model': ['XGBoost'],
+    'CV macro F1 (train)': [xgb_search.best_score_],
+    'Test Accuracy': [accuracy_score(y_test, y_pred_xgb)],
+    'Test macro F1': [f1_score(y_test, y_pred_xgb, average='macro')]
+})
+
+xgb_results.to_csv("DataMining/csv_files/xgb_results.csv", index=False)
