@@ -83,5 +83,5 @@ print(f"\nSelected {len(selected_features)} features:")
 print(selected_features)
 
 # Save the selected features
-train_df[META_COLS + selected_features].to_csv("mood_train.csv", index=False)
-test_df[META_COLS + selected_features].to_csv("mood_test.csv", index=False)
+train_df[META_COLS + selected_features].to_csv("DataMining/csv_files/mood_train.csv", index=False)
+test_df[META_COLS + selected_features].to_csv("DataMining/csv_files/mood_test.csv", index=False)
