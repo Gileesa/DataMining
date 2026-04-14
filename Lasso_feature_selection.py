@@ -2,6 +2,8 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Lasso
 
+# Changed mood value to catgorical classes for classification, then mapped them to integers for easier handling in classification models.
+
 # Parameter
 ALPHA_VALUE = 0.1
 DATE_COL    = 'date'
@@ -20,6 +22,7 @@ def mood_to_classification(mood):
     else:
         return 'high'
 
+# Apply the classification mapping low = 1, medium = 2, high = 3
 df['target_classification'] = df['target'].apply(mood_to_classification)
 
 # Time-aware split per user
