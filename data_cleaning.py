@@ -136,16 +136,14 @@ def clean_time_series(
             start = sp + 1
         segments.append(valid_idx[start:])
 
-        # trim isolated head/tail segments, keep everything in between
-        # only remove the first segment if it is separated from the rest by a large gap
+        # trim isolated head/tail segments, keep everything in between 
+        # only remove the first segment if it is separated from the rest by a large gap 
         # only remove the last segment if it is separated from the rest by a large gap
-        if len(segments) > 1:
-            segments = segments[1:]   # drop isolated head
-        if len(segments) > 1:
-            segments = segments[:-1]  # drop isolated tail
+        largest_segment = max(segments, key=len)
 
-        start_idx = segments[0][0]
-        end_idx = segments[-1][-1]
+        start_idx = largest_segment[0]
+        end_idx = largest_segment[-1]
+
         user_trimmed = user_full.iloc[start_idx:end_idx+1]
 
         # impute missing values (mean only — std stays NaN for imputed days)
@@ -179,7 +177,7 @@ def clean_time_series(
     return result
 
 
-def plot_cleaned_per_id(df_clean, original_df, value_col='value', save_path=None):
+def plot_cleaned_per_id(df_clean, original_df, value_col='value', feature:str='mood', save_path=None):
     """
     Plot the cleaned time series per ID and prints how many days were removed (tail/head) and added (interpolation)
     params:
@@ -197,7 +195,7 @@ def plot_cleaned_per_id(df_clean, original_df, value_col='value', save_path=None
     axes = axes.flatten()
 
     # filter original to mood only, normalize dates to day
-    original_mood = original_df[original_df['variable'] == 'mood'].copy()
+    original_mood = original_df[original_df['variable'] == feature].copy()
     original_mood['date'] = pd.to_datetime(original_mood['date']).dt.floor('D')
     df_clean['date'] = pd.to_datetime(df_clean['date']).dt.floor('D')
 
@@ -242,30 +240,45 @@ def plot_cleaned_per_id(df_clean, original_df, value_col='value', save_path=None
 
 
 def create_window_dataset_from_clean(
-    df1,
-    df2,
-    feature1='mood',
-    feature2='screen',
+    dfs,                # list of dataframes
+    feature_names=['screen', 'mood'],      # list of feature names (same order)
     window_size=5,
-    save_path='csv_files/some_mood_prediction_dataset.csv'
+    target_feature=None,
+    save_path='csv_files/window_dataset.csv'
 ):
     """
-    Create sliding window dataset using pre-cleaned mood + screen data.
+    Generalized sliding window dataset for multiple features.
+
+    params:
+    - dfs: list of cleaned dataframes
+    - feature_names: list of feature names (same length as dfs)
+    - target_feature: which feature to predict (default = first)
     """
 
-    # rename columns
-    mood_df = df1[['id', 'date', 'value']].rename(columns={'value': feature1})
-    screen_df = df2[['id', 'date', 'value']].rename(columns={'value': feature2})
+    merged_df = None
 
-    # merge on id + date
-    df = pd.merge(mood_df, screen_df, on=['id', 'date'], how='inner')
+    for df, feature in zip(dfs, feature_names):
+        temp = df[['id', 'date', 'value']].rename(columns={'value': feature})
 
-    df = df.sort_values(['id', 'date'])
+        if merged_df is None:
+            merged_df = temp
+        else:
+            merged_df = pd.merge(
+                merged_df,
+                temp,
+                on=['id', 'date'],
+                how='inner'
+            )
+
+    merged_df = merged_df.sort_values(['id', 'date'])
+
+    if target_feature is None:
+        target_feature = feature_names[0]
 
     all_rows = []
 
-    # creating windows
-    for uid, user_df in df.groupby('id'):
+    # ---- creating windows ----
+    for uid, user_df in merged_df.groupby('id'):
         user_df = user_df.sort_values('date').reset_index(drop=True)
 
         if len(user_df) < window_size + 1:
@@ -274,20 +287,19 @@ def create_window_dataset_from_clean(
         for i in range(window_size, len(user_df)):
             row = {}
 
-            # id + date (prediction day)
+            # id + date
             row['id'] = uid
             row['date'] = user_df.loc[i, 'date']
 
-            # feature1 window
-            for j in range(window_size):
-                row[f'{feature1}_t-{window_size-j}'] = user_df.loc[i - window_size + j, feature1]
+            # loop over ALL features
+            for feature in feature_names:
+                for j in range(window_size):
+                    row[f'{feature}_t-{window_size-j}'] = user_df.loc[
+                        i - window_size + j, feature
+                    ]
 
-            # feature 2 window
-            for j in range(window_size):
-                row[f'{feature2}_t-{window_size-j}'] = user_df.loc[i - window_size + j, feature2]
-
-            # creating target
-            row['target'] = user_df.loc[i, feature1]
+            # target
+            row['target'] = user_df.loc[i, target_feature]
 
             all_rows.append(row)
 
@@ -322,15 +334,17 @@ cleaned_df = remove_extremes(cleaned_df)
 # + cut off parts of timeseries with large gaps
 clean_dates_mood = clean_time_series(cleaned_df)
 clean_dates_screentime = clean_time_series(cleaned_df, varname = 'screen')
+clean_dates_valence = clean_time_series(cleaned_df, varname = 'circumplex.valence')
 print('\n\n====== IMPUTED DATES HEAD =======\n', clean_dates_mood.head(20))
 plot_cleaned_per_id(clean_dates_mood, cleaned_df, save_path='Figures/dates_mood.png')
-plot_cleaned_per_id(clean_dates_screentime, cleaned_df, save_path='Figures/dates_screen.png')
+plot_cleaned_per_id(clean_dates_screentime, cleaned_df, feature='screen', save_path='Figures/dates_screen.png')
+plot_cleaned_per_id(clean_dates_valence, cleaned_df, feature='circumplex.valence', save_path='Figures/dates_valence.png')
 
 
 df_windows = create_window_dataset_from_clean(
-    clean_dates_mood,
-    clean_dates_screentime,
+    [clean_dates_mood, clean_dates_screentime, clean_dates_valence],
+    feature_names=['mood', 'screen', 'circumplex.valence'],
     window_size=5,
-    save_path='csv_files/mood_window_dataset.csv'
+    save_path='csv_files/mood_window_dataset2.csv'
 )
 print(df_windows.head(20))
