@@ -119,3 +119,12 @@ print(results_df.head(20))
 
 # Save to CSV
 results_df.to_csv("DataMining/csv_files/rf_predictions.csv", index=False)
+
+rf_results = pd.DataFrame({
+    'Model': ['Random Forest'],
+    'CV macro F1 (train)': [rf_search.best_score_],
+    'Test Accuracy': [accuracy_score(y_test, y_pred_rf)],
+    'Test macro F1': [f1_score(y_test, y_pred_rf, average='macro')]
+})
+
+rf_results.to_csv("DataMining/csv_files/rf_results.csv", index=False)
