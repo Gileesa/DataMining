@@ -230,7 +230,7 @@ def plot_cleaned_per_id(df_clean, original_df, value_col='value', feature:str='m
     for j in range(len(ids), len(axes)):
         axes[j].set_visible(False)
 
-    fig.suptitle(f'Cleaned {value_col} per ID', fontsize=12, y=0.96)
+    fig.suptitle(f'Cleaned {feature} per ID', fontsize=12, y=0.99)
     plt.tight_layout()
     if save_path is not None:
         plt.savefig(save_path)
@@ -243,7 +243,7 @@ def create_window_dataset_from_clean(
     dfs,                # list of dataframes
     feature_names=['screen', 'mood'],      # list of feature names (same order)
     window_size=5,
-    target_feature=None,
+    target_feature='mood',
     save_path='csv_files/window_dataset.csv'
 ):
     """
@@ -252,7 +252,7 @@ def create_window_dataset_from_clean(
     params:
     - dfs: list of cleaned dataframes
     - feature_names: list of feature names (same length as dfs)
-    - target_feature: which feature to predict (default = first)
+    - target_feature: which feature to predict (default = mood)
     """
 
     merged_df = None
@@ -272,12 +272,9 @@ def create_window_dataset_from_clean(
 
     merged_df = merged_df.sort_values(['id', 'date'])
 
-    if target_feature is None:
-        target_feature = feature_names[0]
-
     all_rows = []
 
-    # ---- creating windows ----
+    # create windows 
     for uid, user_df in merged_df.groupby('id'):
         user_df = user_df.sort_values('date').reset_index(drop=True)
 
@@ -291,7 +288,7 @@ def create_window_dataset_from_clean(
             row['id'] = uid
             row['date'] = user_df.loc[i, 'date']
 
-            # loop over ALL features
+            # loop over all features
             for feature in feature_names:
                 for j in range(window_size):
                     row[f'{feature}_t-{window_size-j}'] = user_df.loc[
@@ -305,7 +302,7 @@ def create_window_dataset_from_clean(
 
     dataset = pd.DataFrame(all_rows)
 
-    # ---- SAVE ----
+    # save to csv
     dataset.to_csv(save_path, index=False)
     print(f"\nSaved dataset to: {save_path}")
     print(f"Shape: {dataset.shape}")
@@ -335,15 +332,22 @@ cleaned_df = remove_extremes(cleaned_df)
 clean_dates_mood = clean_time_series(cleaned_df)
 clean_dates_screentime = clean_time_series(cleaned_df, varname = 'screen')
 clean_dates_valence = clean_time_series(cleaned_df, varname = 'circumplex.valence')
+clean_dates_arousal = clean_time_series(cleaned_df, varname = 'circumplex.arousal')
+clean_dates_activity = clean_time_series(cleaned_df, varname = 'activity')
+clean_dates_social = clean_time_series(cleaned_df, varname = 'appCat.social')
+clean_dates_game = clean_time_series(cleaned_df, varname = 'appCat.game')
+clean_dates_entertainment = clean_time_series(cleaned_df, varname = 'appCat.entertainment')
 print('\n\n====== IMPUTED DATES HEAD =======\n', clean_dates_mood.head(20))
 plot_cleaned_per_id(clean_dates_mood, cleaned_df, save_path='Figures/dates_mood.png')
 plot_cleaned_per_id(clean_dates_screentime, cleaned_df, feature='screen', save_path='Figures/dates_screen.png')
 plot_cleaned_per_id(clean_dates_valence, cleaned_df, feature='circumplex.valence', save_path='Figures/dates_valence.png')
+plot_cleaned_per_id(clean_dates_arousal, cleaned_df, feature='circumplex.arousal', save_path='Figures/dates_arousal.png')
+plot_cleaned_per_id(clean_dates_activity, cleaned_df, feature='activity', save_path='Figures/dates_activity.png')
 
 
 df_windows = create_window_dataset_from_clean(
-    [clean_dates_mood, clean_dates_screentime, clean_dates_valence],
-    feature_names=['mood', 'screen', 'circumplex.valence'],
+    [clean_dates_mood, clean_dates_screentime, clean_dates_valence, clean_dates_arousal, clean_dates_activity, clean_dates_social, clean_dates_game, clean_dates_entertainment],
+    feature_names=['mood', 'screen', 'circumplex.valence', 'circumplex.arousal', 'activity', 'appCat.social', 'appCat.game', 'appCat.entertainment'],
     window_size=5,
     save_path='csv_files/mood_window_dataset2.csv'
 )
