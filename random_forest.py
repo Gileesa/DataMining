@@ -95,7 +95,7 @@ plt.savefig("DataMining/figures/rf_confusion_matrix.pdf")
 # Feature importance plot
 feat_imp = pd.Series(best_rf.feature_importances_, index=FEATURE_COLS)
 
-feat_imp.sort_values()
+feat_imp = feat_imp.sort_values()
 feat_imp.plot(kind='barh', figsize=(7, 6),title="RF Feature Importances")
 
 plt.tight_layout()
