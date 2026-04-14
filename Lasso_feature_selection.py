@@ -15,9 +15,12 @@ df[DATE_COL] = pd.to_datetime(df[DATE_COL])
 
 # Target engineering: convert continuous mood to categorical classes for classification
 def mood_to_classification(mood):
-    if mood <= 3:
+    q1 = df['target'].quantile(0.33)
+    q2 = df['target'].quantile(0.66)
+
+    if mood <= q1:
         return 'low'
-    elif mood <= 6:
+    elif mood <= q2:
         return 'medium'
     else:
         return 'high'
