@@ -51,15 +51,30 @@ def plot_valence_and_arousal_vs_screentime(df):
     plt.show()
 
 
-def histogram_of_mood(df):
-    mood_df= df[df['variable']=='mood']['value']
+def histogram_of_var(df, varname='mood'):
+    mood_df= df[df['variable']==varname]['value']
+
+    # stats
+    min_val = mood_df.min()
+    max_val = mood_df.max()
+
+    # add min and max text
+    plt.text(
+        0.95, 0.95,
+        f"Min: {min_val:.2f}\nMax: {max_val:.2f}",
+        transform=plt.gca().transAxes,
+        ha='right',
+        va='top',
+        bbox=dict(facecolor='white', alpha=0.7)
+    )
+
     plt.hist(mood_df, bins=15, color='lightpink', edgecolor='red')
-    plt.title('Histogram of Mood')
-    plt.xlabel('Mood')
+    plt.title(f'Histogram of {varname}')
+    plt.xlabel(f'{varname}')
     plt.ylabel('Frequency')
     plt.show()
  
-    print("Mood statistics:")
+    print(f"\n{varname} statistics:")
     print("Mean:", mood_df.mean())
     print("Median:", mood_df.median())
     print("Min:", mood_df.min())
@@ -284,7 +299,7 @@ def print_screen_rows_for_id(df, target_id='AS14.31'):
     print(filtered_df)
     print(len(filtered_df))
 
-print_screen_rows_for_id(df)
+# print_screen_rows_for_id(df)
 
 # plot_valence_per_user_full_calendar(df)
 # plot_valence_per_user_full_calendar(df, varname="circumplex.arousal")
@@ -294,6 +309,9 @@ print_screen_rows_for_id(df)
 # plot_valence_per_user_with_missing(df, varname="circumplex.arousal")
 # plot_valence_per_user_with_missing(df, varname="mood")
 
-# histogram_of_mood(df)
+# distinct_variables = df['variable'].unique().tolist()
+# for var in distinct_variables:
+#     histogram_of_var(df, var)
+
 # print("\n\n")
 # histogram_dates(df)
