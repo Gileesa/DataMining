@@ -273,10 +273,23 @@ def plot_valence_per_user_with_missing(df, varname: str = 'circumplex.valence'):
     plt.savefig(f'Figures/missinvals_all_ids_{varname}.png')
     plt.show()
 
+def print_screen_rows_for_id(df, target_id='AS14.31'):
+
+    print('='*50)
+    filtered_df = df[
+        (df['variable'] == 'screen') &
+        (df['id'] == target_id)
+    ]
+    
+    print(filtered_df)
+    print(len(filtered_df))
+
+print_screen_rows_for_id(df)
 
 # plot_valence_per_user_full_calendar(df)
 # plot_valence_per_user_full_calendar(df, varname="circumplex.arousal")
 # plot_valence_per_user_full_calendar(df, varname="mood")
+# plot_valence_per_user_full_calendar(df, varname='screen')
 # plot_valence_per_user_with_missing(df)
 # plot_valence_per_user_with_missing(df, varname="circumplex.arousal")
 # plot_valence_per_user_with_missing(df, varname="mood")
