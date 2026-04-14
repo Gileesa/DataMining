@@ -4,6 +4,7 @@ import pandas as pd
 def test_train_splitting(
     df,
     test_ratio=0.3,
+    validation_ratio = 0.1,
     date_col='date',
     save_prefix='csv_files/mood_dataset'
 ):
