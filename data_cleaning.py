@@ -18,7 +18,7 @@ TRIMMING:bool = False
 # when changing this, don't forget to 
 # change the data cleaning steps at the end of 
 # this document as well !!
-RELEVANT_FEATURES = ['mood', 'screen', 'circumplex.valence', 'circumplex.arousal', 'activity', 'appCat.social', 'appCat.entertainment']
+RELEVANT_FEATURES = ['mood', 'screen', 'circumplex.valence', 'circumplex.arousal', 'activity', 'appCat.social', 'appCat.entertainment', 'appCat.communication', 'appCat.other', 'appCat.travel']
 
 
 
