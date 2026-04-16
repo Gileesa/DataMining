@@ -67,11 +67,15 @@ def histogram_of_var(df, varname='mood'):
         va='top',
         bbox=dict(facecolor='white', alpha=0.7)
     )
-
-    plt.hist(mood_df, bins=15, color='lightpink', edgecolor='red')
+    if varname!='mood':
+        plt.hist(mood_df, bins=15, color='lightpink', edgecolor='red')
+    else:
+        plt.hist(mood_df, bins=np.arange(0.5, 11.5, 1), color='lightpink', edgecolor='red')
     plt.title(f'Histogram of {varname}')
     plt.xlabel(f'{varname}')
     plt.ylabel('Frequency')
+    if varname == 'mood':
+        plt.savefig('Figures/EDA/mood_histogram')
     plt.show()
  
     print(f"\n{varname} statistics:")
@@ -228,6 +232,18 @@ def plot_valence_per_user_full_calendar(df, varname: str = 'circumplex.valence')
         ax.tick_params(axis='x', labelrotation=45, labelsize=7)
         ax.tick_params(axis='y', labelsize=7)
         ax.grid(True, alpha=0.3)
+        if uid =='AS14.01':
+            # --- save individual plot ---
+            fig_ind, ax_ind = plt.subplots(figsize=(6, 3))
+            ax_ind.plot(user_full.index, user_full.values, marker='o', linestyle='-', linewidth=1.2, color="lightpink", markersize=3)
+            ax_ind.set_title(str(uid), fontsize=9)
+            ax_ind.xaxis.set_major_locator(mdates.MonthLocator())
+            ax_ind.xaxis.set_major_formatter(mdates.DateFormatter('%b %y'))
+            ax_ind.tick_params(axis='x', labelrotation=45, labelsize=7)
+            ax_ind.tick_params(axis='y', labelsize=7)
+            ax_ind.grid(True, alpha=0.3)
+            fig_ind.savefig(f'Figures/EDA/individual_{varname}_{uid}.png', bbox_inches='tight')
+            plt.close(fig_ind)
 
     # hide unused axes
     for j in range(len(ids), len(axes)):
@@ -235,7 +251,7 @@ def plot_valence_per_user_full_calendar(df, varname: str = 'circumplex.valence')
 
     fig.suptitle(f'{varname} per user — missing dates in red', fontsize=12, y=0.98)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.savefig(f'Figures/full_calendar_all_ids_{varname}.png')
+    plt.savefig(f'Figures/EDA/full_calendar_all_ids_{varname}.png')
     plt.show()
 
 def plot_valence_per_user_with_missing(df, varname: str = 'circumplex.valence'):
@@ -285,7 +301,7 @@ def plot_valence_per_user_with_missing(df, varname: str = 'circumplex.valence'):
 
     fig.suptitle(f'{varname} per user — missing values in red', fontsize=12, y=0.96)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plt.savefig(f'Figures/missinvals_all_ids_{varname}.png')
+    plt.savefig(f'Figures/EDA/missinvals_all_ids_{varname}.png')
     plt.show()
 
 def print_screen_rows_for_id(df, target_id='AS14.31'):

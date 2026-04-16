@@ -15,9 +15,6 @@ from data_exploration import print_general_info
 WINDOW_SIZE:int = 5 #days
 TRIMMING:bool = False
 
-# when changing this, don't forget to 
-# change the data cleaning steps at the end of 
-# this document as well !!
 RELEVANT_FEATURES = ['mood', 'screen', 'circumplex.valence', 'circumplex.arousal', 'activity', 'appCat.social', 'appCat.entertainment', 'appCat.communication', 'appCat.other', 'appCat.travel']
 
 
@@ -143,7 +140,7 @@ def plot_KNN(user_full, user_imputed, uid, varnames):
         original = user_full[var]
         imputed = user_imputed[var]
 
-        plt.plot(imputed.index, imputed, '.-', label=f'{var} (imputed)')
+        plt.plot(imputed.index, imputed, '.-')
         plt.plot(original.index, original, 'o', label=f'{var} (original)', alpha=0.6)
 
         # highlight imputed points
@@ -168,7 +165,7 @@ def apply_KNN_imputation(
         df,
         neighbours:int=3,
         relevant_features = None, # put None for all features
-        plotting:bool=False
+        plotting:bool=True
 ):
     imputer = KNNImputer(n_neighbors=neighbours)
 
@@ -228,7 +225,7 @@ def apply_KNN_imputation(
             for date, val in user_imputed.loc[imputed_mask, var].items():
                 print(f"[KNN IMPUTED] ID={uid} | var={var} | date={date.date()} | value={val:.3f}")
 
-        if plotting:
+        if plotting and uid=="AS14.01":
             plot_KNN(user_full, user_imputed, uid, varnames_user)
 
         cleaned_dfs.append(user_melt)
@@ -389,10 +386,12 @@ cleaned_df = missing_imputation(cleaned_df, 'circumplex.valence', backward_inter
 print_general_info(cleaned_df)
 
 #==== remove extreme values, replace with neighbour average (linear interpol) ======
-cleaned_df = remove_extremes(cleaned_df, varname='screen', max_value=700)
+cleaned_df = remove_extremes(cleaned_df, varname='screen', max_value=1000)
 cleaned_df = remove_extremes(cleaned_df, varname='appCat.social', max_value=1000)
-cleaned_df = remove_extremes(cleaned_df, varname='appCat.game', max_value=1000)
+cleaned_df = remove_extremes(cleaned_df, varname='appCat.communication', max_value=1000)
 cleaned_df = remove_extremes(cleaned_df, varname='appCat.entertaiment', max_value=1000)
+cleaned_df = remove_extremes(cleaned_df, varname='appCat.other', max_value=1000)  
+cleaned_df = remove_extremes(cleaned_df, varname='appCat.travel', max_value=1000)
 
 #====== add missing dates =========
 print('DOING KNN imputation')
