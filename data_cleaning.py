@@ -6,7 +6,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from sklearn.impute import KNNImputer
 from data_exploration import print_general_info
+
 
 
 # ===== GLOBAL VARS ========
@@ -54,7 +56,7 @@ def missing_imputation(df, varname: str, imputation_func):
 
     return new_df
 
-def remove_extremes(df, varname='screen', min_value=0, max_value=700):
+def remove_extremes(df, varname:str='screen', min_value:float=0, max_value:float=700):
     '''
     Function that removes extreme values, both at min and max.
     E.g remove screentime below zero and above 700 minutes.
@@ -86,7 +88,7 @@ def remove_extremes(df, varname='screen', min_value=0, max_value=700):
 
     return new_df
 
-def plot_histogram(df, varname, uid:str=None):
+def plot_histogram(df, varname:str, uid:str=None):
     ''' 
     Plots a histogram of a specific variable to see its distribution of values.
     Also shows min and max value in plots.
@@ -134,6 +136,109 @@ def plot_histogram(df, varname, uid:str=None):
     print("Max:", max_val)
 
 
+def plot_KNN(user_full, user_imputed, uid, varnames):
+    for var in varnames:
+        plt.figure(figsize=(10, 5))
+
+        original = user_full[var]
+        imputed = user_imputed[var]
+
+        plt.plot(imputed.index, imputed, '.-', label=f'{var} (imputed)')
+        plt.plot(original.index, original, 'o', label=f'{var} (original)', alpha=0.6)
+
+        # highlight imputed points
+        imputed_mask = original.isna()
+        plt.scatter(
+            imputed.index[imputed_mask],
+            imputed[imputed_mask],
+            color='red',
+            label='imputed points'
+        )
+
+        plt.title(f'KNN Imputation - {var} (ID={uid})')
+        plt.xlabel('Date')
+        plt.ylabel(var)
+        plt.legend()
+        plt.savefig(f'Figures/KNN/KNN_imputation_{uid}_{var}.png')
+        # plt.show()
+        plt.close()
+
+
+def apply_KNN_imputation(
+        df,
+        neighbours:int=3,
+        relevant_features = None, # put None for all features
+        plotting:bool=False
+):
+    imputer = KNNImputer(n_neighbors=neighbours)
+
+    if relevant_features is not None:
+        varnames = relevant_features
+    else:
+        varnames = list(df['variable'].unique())
+
+    df = df[df['variable'].isin(varnames)].copy()
+    df['date_day'] = df['date'].dt.floor('D')
+    cleaned_dfs = []
+    for uid, user_df in df.groupby('id'):
+        # compute daily average and std
+        # we pivot here
+        user_daily = user_df.pivot_table(
+            index='date_day',
+            columns='variable',
+            values='value',
+            aggfunc='mean'
+        ).sort_index()
+
+        varnames_user = user_daily.columns.tolist()
+
+        if user_daily.empty:
+            # skip rest of loop
+            continue 
+
+        # find range of dates
+        full_range = pd.date_range(
+            user_daily.index.min(),
+            user_daily.index.max(),
+            freq='D'
+        )
+        user_full = user_daily.reindex(full_range)
+
+        # impute missing values - KNN
+        user_imputed = pd.DataFrame(
+            imputer.fit_transform(user_full),
+            index=user_full.index,
+            columns=user_full.columns
+        )
+
+        # unpivot (needed for rest of pipeline)
+        user_melt = user_imputed.reset_index().melt(
+            id_vars='index',
+            value_vars=varnames_user,
+            var_name='variable',
+            value_name='value'
+        )
+
+        user_melt = user_melt.rename(columns={'index': 'date'})
+        user_melt['id'] = uid
+
+        # print imputations for debug
+        for var in varnames_user:
+            imputed_mask = user_full[var].isna() & user_imputed[var].notna()
+            for date, val in user_imputed.loc[imputed_mask, var].items():
+                print(f"[KNN IMPUTED] ID={uid} | var={var} | date={date.date()} | value={val:.3f}")
+
+        if plotting:
+            plot_KNN(user_full, user_imputed, uid, varnames_user)
+
+        cleaned_dfs.append(user_melt)
+
+    result = pd.concat(cleaned_dfs, ignore_index=True)
+    return result
+
+    
+
+
 def clean_time_series(
     df,
     varname='mood',
@@ -146,6 +251,7 @@ def clean_time_series(
     In addition, this function cuts away parts on the head and tail of the timeseries
     that have a gap of >3 days with the 'main body' of the timeseries.
     '''
+
     df = df[df['variable'] == varname].copy()
     df['date_day'] = df['date'].dt.floor('D')
     cleaned_dfs = []
@@ -204,14 +310,13 @@ def clean_time_series(
             end_idx = largest_segment[-1]
 
             user_trimmed = user_full.iloc[start_idx:end_idx+1]
-
         else:
             # no trimming
             user_trimmed = user_full.copy()
 
-        # impute missing values (mean only — std stays NaN for imputed days)
+        # impute missing values (mean only; std stays NaN for imputed days)
         user_imputed = user_trimmed.copy()
-        user_imputed['value'] = user_trimmed['value'].interpolate(method='time')
+        user_imputed['value'] = user_trimmed['value'].interpolate(method='time') # linear interpol with actual time spacing
 
         # print imputations for debug
         imputed_mask = user_trimmed['value'].isna() & user_imputed['value'].notna()
@@ -230,35 +335,40 @@ def clean_time_series(
     return result
 
 
-def plot_cleaned_per_id(df_clean, original_df, value_col='value', feature:str='mood', save_path=None):
+def plot_cleaned_per_id(df_clean, original_df, feature: str = 'mood', save_path=None):
     """
-    Plot the cleaned time series per ID and prints how many days were removed (tail/head) and added (interpolation)
+    Plot the cleaned time series per ID for a given feature.
+    Compatible with the melted output of apply_KNN_imputation.
+
     params:
-    - df_clean: DataFrame with columns ['id', 'date', value_col]
-    - original_df: DataFrame with raw data, must contain ['id', 'date', 'variable']
-    - value_col: column name containing the numeric value to plot
-    - save_path: optional path to save the figure
+    - df_clean:     melted DataFrame with columns ['id', 'date', 'variable', 'value']
+                    (output of apply_KNN_imputation)
+    - original_df:  DataFrame with raw data, must contain ['id', 'date', 'variable', 'value']
+    - feature:      which variable to plot (must be in 'variable' column)
+    - save_path:    optional path to save the figure
     returns:
     - None
     """
-    ids = df_clean['id'].unique()
+    # filter both dfs to the feature of interest
+    df_feat = df_clean[df_clean['variable'] == feature].copy()
+    original_feat = original_df[original_df['variable'] == feature].copy()
+
+    # normalise dates to day-level
+    df_feat['date'] = pd.to_datetime(df_feat['date']).dt.floor('D')
+    original_feat['date'] = pd.to_datetime(original_feat['date']).dt.floor('D')
+
+    ids = df_feat['id'].unique()
     ncols = 6
     nrows = int(np.ceil(len(ids) / ncols))
     fig, axes = plt.subplots(nrows, ncols, figsize=(20, nrows * 3), sharey=True)
     axes = axes.flatten()
 
-    # filter original to mood only, normalize dates to day
-    original_mood = original_df[original_df['variable'] == feature].copy()
-    original_mood['date'] = pd.to_datetime(original_mood['date']).dt.floor('D')
-    df_clean['date'] = pd.to_datetime(df_clean['date']).dt.floor('D')
-
     print(f'\n\n ==== REMOVED DATES INFO {save_path} =======')
     for i, uid in enumerate(ids):
         ax = axes[i]
-        
-        # filter on user id
-        user_clean = df_clean[df_clean['id'] == uid]
-        user_orig  = original_mood[original_mood['id'] == uid]
+
+        user_clean = df_feat[df_feat['id'] == uid]
+        user_orig  = original_feat[original_feat['id'] == uid]
 
         original_dates = set(user_orig['date'].unique())
         cleaned_dates  = set(user_clean['date'].unique())
@@ -269,10 +379,10 @@ def plot_cleaned_per_id(df_clean, original_df, value_col='value', feature:str='m
         n_added    = len(cleaned_dates - original_dates)
 
         print(f"- ID {uid}: {n_original} original days → {n_cleaned} cleaned days "
-              f"| removed (tail/head) {n_removed}, added (interpol) {n_added}")
+              f"| removed (tail/head) {n_removed}, added (KNN) {n_added}")
 
         user_clean_sorted = user_clean.sort_values('date')
-        ax.plot(user_clean_sorted['date'], user_clean_sorted[value_col],
+        ax.plot(user_clean_sorted['date'], user_clean_sorted['value'],
                 marker='o', linestyle='-', color='gold', linewidth=1.2, markersize=3)
         ax.set_title(str(uid), fontsize=9)
         ax.xaxis.set_major_locator(mdates.MonthLocator())
@@ -351,7 +461,7 @@ def create_n_size_window(
                 for j in range(window_size):
                     # create window values
                     row[f'{feature}_t-{window_size-j}'] = user_df.loc[
-                        i - window_size + j, feature
+                        i - window_size + j, feature 
                     ]
 
             # target
@@ -465,12 +575,15 @@ clean_dates_social = clean_time_series(cleaned_df, varname = 'appCat.social')
 clean_dates_game = clean_time_series(cleaned_df, varname = 'appCat.game')
 clean_dates_entertainment = clean_time_series(cleaned_df, varname = 'appCat.entertainment')
 
+print('DOING KNN imputation')
+KNN_impute = apply_KNN_imputation(cleaned_df, 3, RELEVANT_FEATURES)
+
 print('\n\n====== IMPUTED DATES HEAD =======\n', clean_dates_mood.head(20))
-plot_cleaned_per_id(clean_dates_mood, cleaned_df, save_path='Figures/dates_mood.png')
-plot_cleaned_per_id(clean_dates_screentime, cleaned_df, feature='screen', save_path='Figures/dates_screen.png')
-plot_cleaned_per_id(clean_dates_valence, cleaned_df, feature='circumplex.valence', save_path='Figures/dates_valence.png')
-plot_cleaned_per_id(clean_dates_arousal, cleaned_df, feature='circumplex.arousal', save_path='Figures/dates_arousal.png')
-plot_cleaned_per_id(clean_dates_activity, cleaned_df, feature='activity', save_path='Figures/dates_activity.png')
+plot_cleaned_per_id(KNN_impute, cleaned_df, save_path='Figures/KNN/dates_mood.png')
+plot_cleaned_per_id(KNN_impute, cleaned_df, feature='screen', save_path='Figures/KNN/dates_screen.png')
+plot_cleaned_per_id(KNN_impute, cleaned_df, feature='circumplex.valence', save_path='Figures/KNN/dates_valence.png')
+plot_cleaned_per_id(KNN_impute, cleaned_df, feature='circumplex.arousal', save_path='Figures/KNN/dates_arousal.png')
+plot_cleaned_per_id(KNN_impute, cleaned_df, feature='activity', save_path='Figures/KNN/dates_activity.png')
 
 
 df_windows = create_n_size_window(
