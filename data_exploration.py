@@ -309,9 +309,9 @@ def print_screen_rows_for_id(df, target_id='AS14.31'):
 # plot_valence_per_user_with_missing(df, varname="circumplex.arousal")
 # plot_valence_per_user_with_missing(df, varname="mood")
 
-distinct_variables = df['variable'].unique().tolist()
-for var in distinct_variables:
-    histogram_of_var(df, var)
+# distinct_variables = df['variable'].unique().tolist()
+# for var in distinct_variables:
+#     histogram_of_var(df, var)
 
 # print("\n\n")
 # histogram_dates(df)
