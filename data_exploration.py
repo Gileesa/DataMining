@@ -2,8 +2,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from config import DATASET_ORIGIN
 
-df = pd.read_csv('dataset_mood_smartphone.csv')
+
+df = pd.read_csv(DATASET_ORIGIN)
 #  make datetime
 df['date'] = pd.to_datetime(df['time'], errors='coerce')
 

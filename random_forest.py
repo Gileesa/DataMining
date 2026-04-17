@@ -6,17 +6,16 @@ from sklearn.metrics import accuracy_score, f1_score, classification_report, con
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
-
+import os 
 from data_loader import load_data
+from config import N_SPLITS, RANDOM_STATE
 
-# Issue few people with a low mood !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+os.makedirs("DataMining/Figures/RandomForest", exist_ok=True)
+os.makedirs("DataMining/csv_files/RandomForest", exist_ok=True)
 
-# Configuration
-N_SPLITS   = 5 
-RANDOM_STATE = 42
 
 # Load data
-train_df, test_df, X_train, X_test, FEATURE_COLS = load_data()
+train_df, test_df, X_train, X_test, feature_cols = load_data()
 
 # Encode labels
 le = LabelEncoder()
@@ -39,17 +38,18 @@ tscv = TimeSeriesSplit(n_splits=N_SPLITS)
 # MODEL 1 — Random Forest
 
 rf_param_grid = {
-    'n_estimators':      [100, 200, 300],
-    'max_depth':         [None, 5, 10, 15],
-    'min_samples_leaf':  [1, 2, 5],
-    'max_features':      ['sqrt', 'log2'],
+    'n_estimators':      [200, 400, 600],
+    'max_depth':         [2, 4, 6, None],
+    'min_samples_leaf':  [1, 2, 5, 10],
+    'max_features':      ['sqrt', 'log2', None],
+    'criterion':         ["gini", "entropy", "log_loss"],
 }
 
 # Search for the best model
 rf_search = RandomizedSearchCV(
     RandomForestClassifier(random_state=RANDOM_STATE, class_weight='balanced'),
     param_distributions=rf_param_grid,
-    n_iter=20,
+    n_iter=50,
     cv=tscv,
     scoring='f1_macro',      # macro F1 — handles class imbalance
     n_jobs=-1,
@@ -67,41 +67,49 @@ print(f"Best CV macro F1: {rf_search.best_score_:.4f}")
 
 # Evaluate on the test set
 y_pred_rf = best_rf.predict(X_test)
+
+test_accuracy = accuracy_score(y_test, y_pred_rf)
+test_macro_f1 = f1_score(y_test, y_pred_rf, average='macro')
+
 print("\n── Test set results ──")
-print(f"Accuracy : {accuracy_score(y_test, y_pred_rf):.4f}")
-print(f"Macro F1 : {f1_score(y_test, y_pred_rf, average='macro'):.4f}")
+print(f"Accuracy : {test_accuracy:.4f}")
+print(f"Macro F1 : {test_macro_f1:.4f}")
 
 print("\nClassification report:")
-label_names = le.transform(le.classes_)
+label_ids = le.transform(le.classes_)
 print(classification_report(
                             y_test, 
                             y_pred_rf, 
-                            labels=label_names,
+                            labels=label_ids,
                             target_names=le.classes_,
                             zero_division=0
                             ))
 
 # Confusion matrix
-cm_rf = confusion_matrix(y_test, y_pred_rf, labels = label_names)
+cm_rf = confusion_matrix(y_test, y_pred_rf, labels = label_ids)
 plt.figure(figsize=(5, 4))
 sns.heatmap(cm_rf, annot=True, fmt='d', cmap='Blues', xticklabels=le.classes_, yticklabels=le.classes_)
 plt.title("Random Forest – Confusion Matrix")
 plt.xlabel("Predicted"); plt.ylabel("Actual")
 plt.tight_layout()
-plt.savefig("DataMining/figures/rf_confusion_matrix.png", dpi=150)
-plt.savefig("DataMining/figures/rf_confusion_matrix.pdf")
+plt.savefig("DataMining/Figures/RandomForest/rf_confusion_matrix.png", dpi=150)
+plt.savefig("DataMining/Figures/RandomForest/rf_confusion_matrix.pdf")
+
 #plt.show()
+plt.close()
 
 # Feature importance plot
-feat_imp = pd.Series(best_rf.feature_importances_, index=FEATURE_COLS)
+feat_imp = pd.Series(best_rf.feature_importances_, index=feature_cols)
 
 feat_imp = feat_imp.sort_values()
 feat_imp.plot(kind='barh', figsize=(7, 6),title="RF Feature Importances")
 
 plt.tight_layout()
-plt.savefig("DataMining/figures/rf_feature_importance.pdf")
-plt.savefig("DataMining/figures/rf_feature_importance.png", dpi = 150)
+plt.savefig("DataMining/Figures/RandomForest/rf_feature_importance.pdf")
+plt.savefig("DataMining/Figures/RandomForest/rf_feature_importance.png", dpi = 150)
 # plt.show()
+plt.close()
+
 
 # Convert predicted numbers back to class names
 predicted_labels = le.inverse_transform(y_pred_rf)
@@ -117,14 +125,23 @@ results_df['predicted_class'] = predicted_labels
 print("\nPredictions for each id and date:")
 print(results_df.head(20))
 
+# print("Train users:", train_df["id"].nunique())
+# print("Test users:", test_df["id"].nunique())
+# print("Prediction users:", results_df["id"].nunique())
+
 # Save to CSV
-results_df.to_csv("DataMining/csv_files/rf_predictions.csv", index=False)
+results_df.to_csv("DataMining/csv_files/RandomForest/rf_predictions.csv", index=False)
 
 rf_results = pd.DataFrame({
     'Model': ['Random Forest'],
     'CV macro F1 (train)': [rf_search.best_score_],
-    'Test Accuracy': [accuracy_score(y_test, y_pred_rf)],
-    'Test macro F1': [f1_score(y_test, y_pred_rf, average='macro')]
+    'Test Accuracy': [test_accuracy],
+    'Test macro F1': [test_macro_f1]
 })
 
-rf_results.to_csv("DataMining/csv_files/rf_results.csv", index=False)
+# print(results_df["id"].nunique())
+# print(results_df["id"].unique())
+# print(results_df["id"].value_counts())
+
+
+rf_results.to_csv("DataMining/csv_files/RandomForest/rf_results.csv", index=False)
