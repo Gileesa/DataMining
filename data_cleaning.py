@@ -131,6 +131,8 @@ def plot_histogram(df, varname:str, uid:str=None):
     )
 
     plt.show()
+    plt.close()
+
 
     print(f"\n{title} statistics:")
     print("Mean:", data.mean())
@@ -306,6 +308,7 @@ def plot_cleaned_per_id(df_clean, original_df, feature: str = 'mood', save_path=
     if save_path is not None:
         plt.savefig(save_path)
     plt.show()
+    plt.close()
 
 
 
