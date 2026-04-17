@@ -1,0 +1,2 @@
+Model,CV macro F1 (train),Test Accuracy,Test macro F1
+XGBoost,0.4155096049712358,0.5224274406332454,0.4860686780338735

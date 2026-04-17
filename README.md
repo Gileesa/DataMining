@@ -15,9 +15,9 @@ A window-based dataset is constructed where features represent aggregated values
 Classification Dataset Preparation
 The continuous mood score is converted into three classes:
 
-Low (≤ 5)
-Medium (6–7)
-High (≥ 8)
+Low (<= 6)
+Medium (6 < mood <= 7)
+High (> 7)
 
 The dataset is split into train and test sets using a time-aware split per user to avoid data leakage.
 
