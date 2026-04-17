@@ -1,7 +1,7 @@
 #
 #
 #
-
+import os
 import pandas as pd 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,6 +9,12 @@ import matplotlib.dates as mdates
 from sklearn.impute import KNNImputer
 from data_exploration import print_general_info
 
+
+from config import DATASET_ORIGIN
+
+os.makedirs("Figures/KNN", exist_ok=True)
+os.makedirs("Figures/EDA", exist_ok=True)
+os.makedirs("csv_files/KNN", exist_ok=True)
 
 
 # ===== GLOBAL VARS ========
@@ -357,6 +363,11 @@ def create_one_size_window(
 
             for feature in feature_names:
                 row[f'{feature}_avg'] = window_slice[feature].mean()
+                row[f'{feature}_std'] = window_slice[feature].std()
+                row[f'{feature}_min'] = window_slice[feature].min()
+                row[f'{feature}_max'] = window_slice[feature].max()
+                row[f'{feature}_trend'] = window_slice[feature].iloc[-1] - window_slice[feature].iloc[0]
+
 
             # target (e.g mood)
             row['target'] = user_df.loc[i, target_feature]
@@ -373,7 +384,7 @@ def create_one_size_window(
 
 
 ### ==== MAIN CLEANING PART ========
-df = pd.read_csv('dataset_mood_smartphone.csv')
+df = pd.read_csv(DATASET_ORIGIN)
 
 #  make datetime
 df['date'] = pd.to_datetime(df['time'], errors='coerce')
@@ -389,7 +400,7 @@ print_general_info(cleaned_df)
 cleaned_df = remove_extremes(cleaned_df, varname='screen', max_value=1000)
 cleaned_df = remove_extremes(cleaned_df, varname='appCat.social', max_value=1000)
 cleaned_df = remove_extremes(cleaned_df, varname='appCat.communication', max_value=1000)
-cleaned_df = remove_extremes(cleaned_df, varname='appCat.entertaiment', max_value=1000)
+cleaned_df = remove_extremes(cleaned_df, varname= 'appCat.entertainment', max_value=1000)
 cleaned_df = remove_extremes(cleaned_df, varname='appCat.other', max_value=1000)  
 cleaned_df = remove_extremes(cleaned_df, varname='appCat.travel', max_value=1000)
 
@@ -407,7 +418,7 @@ df_windows = create_one_size_window(
     KNN_impute,
     feature_names=RELEVANT_FEATURES,
     window_size=5,
-    save_path='csv_files/KNN/KKN_one_size_mood_window_dataset.csv'
+    save_path='DataMining/csv_files/KNN/KNN_one_size_mood_window_dataset.csv'
 )
 
 print('WINDOW number of ids: ', len(df_windows['id'].unique()))
