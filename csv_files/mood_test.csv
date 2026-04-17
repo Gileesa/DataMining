@@ -1,4 +1,4 @@
-id,date,target,target_classification,mood_t-5,mood_t-4,mood_t-2,mood_t-1
+id,date,target,target_classification,screen_t-5,screen_t-4,screen_t-2,screen_t-1
 AS14.02,2014-04-13,7.2,medium,6.25,7.25,6.5,6.0
 AS14.02,2014-04-14,8.0,high,7.25,7.25,6.0,7.2
 AS14.02,2014-04-15,7.25,medium,7.25,6.5,7.2,8.0
