@@ -14,8 +14,8 @@ from sklearn.utils.class_weight import compute_sample_weight
 # Load data
 train_df, test_df, X_train, X_test, feature_cols = load_data()
 
-os.makedirs("DataMining/Figures/XGBOOST", exist_ok=True)
-os.makedirs("DataMining/csv_files/XGBOOST", exist_ok=True)
+os.makedirs("DataMining/Figures/Classification/XGBOOST", exist_ok=True)
+os.makedirs("DataMining/csv_files/Classification/XGBOOST", exist_ok=True)
 
 # Encode labels
 le = LabelEncoder()
@@ -59,7 +59,7 @@ xgb_search = RandomizedSearchCV(
         tree_method='hist'
     ),
     param_distributions=xgb_param_grid,
-    n_iter=50,
+    n_iter=100,
     cv=tscv,
     scoring='f1_macro',
     n_jobs=-1,
@@ -108,8 +108,8 @@ sns.heatmap(cm_xgb, annot=True, fmt='d', cmap='Blues', xticklabels=le.classes_, 
 plt.title("XGBoost – Confusion Matrix")
 plt.xlabel("Predicted"); plt.ylabel("Actual")
 plt.tight_layout()
-plt.savefig("DataMining/Figures/XGBOOST/xgb_confusion_matrix.png", dpi=150)
-plt.savefig("DataMining/Figures/XGBOOST/xgb_confusion_matrix.pdf")
+plt.savefig("DataMining/Figures/Classification/XGBOOST/xgb_confusion_matrix.png", dpi=150)
+plt.savefig("DataMining/Figures/Classification/XGBOOST/xgb_confusion_matrix.pdf")
 plt.close()
 
 # Feature importance plot
@@ -119,8 +119,8 @@ feat_imp = feat_imp.sort_values()
 feat_imp.plot(kind='barh', figsize=(7, 6),title="XGB Feature Importances")
 
 plt.tight_layout()
-plt.savefig("DataMining/Figures/XGBOOST/xgb_feature_importance.pdf")
-plt.savefig("DataMining/Figures/XGBOOST/xgb_feature_importance.png", dpi = 150)
+plt.savefig("DataMining/Figures/Classification/XGBOOST/xgb_feature_importance.pdf")
+plt.savefig("DataMining/Figures/Classification/XGBOOST/xgb_feature_importance.png", dpi = 150)
 plt.close()
 
 # Convert predicted numbers back to class names
@@ -139,7 +139,7 @@ print("\nPredictions for each id and date:")
 print(results_df.head(20))
 
 # Save to CSV
-results_df.to_csv("DataMining/csv_files/XGBOOST/xgb_predictions.csv", index=False)
+results_df.to_csv("DataMining/csv_files/Classification/XGBOOST/xgb_predictions.csv", index=False)
 
 xgb_results = pd.DataFrame({
     'Model': ['XGBoost'],
@@ -148,4 +148,4 @@ xgb_results = pd.DataFrame({
     'Test macro F1': [test_f1_score]
 })
 
-xgb_results.to_csv("DataMining/csv_files/XGBOOST/xgb_results.csv", index=False)
+xgb_results.to_csv("DataMining/csv_files/Classification/XGBOOST/xgb_results.csv", index=False)
