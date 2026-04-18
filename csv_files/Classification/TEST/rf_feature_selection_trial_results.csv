@@ -1,0 +1,3 @@
+Model,CV macro F1 (train),Test Accuracy,Test Macro F1
+Random Forest (all features),0.43291673280811765,0.5435356200527705,0.5346185798758735
+Random Forest (top 20 features),0.46656089946976637,0.6015831134564644,0.5854270398880616
