@@ -1,0 +1,2 @@
+Model,Test MSE,Test MAE,Best Params,Best CV Neg MSE,Best CV MSE
+Random Forest Regressor (baseline),0.365913986342469,0.4399275133330025,"{'n_estimators': 500, 'min_samples_split': 4, 'min_samples_leaf': 5, 'max_features': 1.0, 'max_depth': 5, 'criterion': 'squared_error'}",-0.4510815402384204,0.4510815402384204

@@ -10,8 +10,8 @@ import os
 from data_loader import load_data
 from config import N_SPLITS, RANDOM_STATE
 
-os.makedirs("DataMining/Figures/RandomForest", exist_ok=True)
-os.makedirs("DataMining/csv_files/RandomForest", exist_ok=True)
+os.makedirs("DataMining/Figures/Classification/RandomForest", exist_ok=True)
+os.makedirs("DataMining/csv_files/Classification/RandomForest", exist_ok=True)
 
 
 # Load data
@@ -38,30 +38,49 @@ tscv = TimeSeriesSplit(n_splits=N_SPLITS)
 # MODEL 1 — Random Forest
 
 rf_param_grid = {
-    'n_estimators':      [200, 400, 600],
-    'max_depth':         [2, 4, 6, None],
-    'min_samples_leaf':  [1, 2, 5, 10],
-    'max_features':      ['sqrt', 'log2', None],
-    'criterion':         ["gini", "entropy", "log_loss"],
+
+    "n_estimators"      : [100, 200, 300, 400, 500],
+    "criterion"         : ['gini', "entropy", "log_loss"], 
+    "max_depth"         : [2, 4, 6, None], 
+    "min_samples_split" : [2, 4, 6, 8, 10], 
+    "min_samples_leaf"  : [1, 3, 5, 7, 9],
+    # "min_weight_fraction_leaf"  : [0.0], 
+    "max_features"      : [None, 'sqrt', 'log2'], 
+    # "max_leaf_nodes"    : [None], 
+    # "min_impurity_decrease" : [0.0], 
+    # "bootstrap"         : [True], 
+    # "oob_score"         : [False], 
+    # "n_jobs"            : [None], 
+    # "random_state"      : [None], 
+    # "verbose"           : [0], 
+    # "warm_start"        : [False],
+    # "class_weight"      : [None], 
+    # "ccp_alpha"         : [0.0], 
+    # "max_samples"       : [None],
+    # "monotonic_cst"     : [None]
 }
 
 # Search for the best model
 rf_search = RandomizedSearchCV(
-    RandomForestClassifier(random_state=RANDOM_STATE, class_weight='balanced'),
-    param_distributions=rf_param_grid,
-    n_iter=50,
-    cv=tscv,
-    scoring='f1_macro',      # macro F1 — handles class imbalance
-    n_jobs=-1,
-    random_state=RANDOM_STATE,
-    verbose=1,
-)
+    RandomForestClassifier(
+                            random_state        =RANDOM_STATE, 
+                            class_weight        ='balanced'),
+                            param_distributions =rf_param_grid,
+                            n_iter              =100,
+                            cv                  =tscv,
+                            scoring             ='f1_macro',      # macro F1 — handles class imbalance
+                            n_jobs              =-1,
+                            random_state        =RANDOM_STATE,
+                            verbose             =1,
+                        )
 
 # Train the model on the training set
 rf_search.fit(X_train, y_train)
 
 # Best RF model from search
 best_rf = rf_search.best_estimator_
+
+
 print(f"\nBest RF params: {rf_search.best_params_}")
 print(f"Best CV macro F1: {rf_search.best_score_:.4f}")
 
@@ -92,8 +111,8 @@ sns.heatmap(cm_rf, annot=True, fmt='d', cmap='Blues', xticklabels=le.classes_, y
 plt.title("Random Forest – Confusion Matrix")
 plt.xlabel("Predicted"); plt.ylabel("Actual")
 plt.tight_layout()
-plt.savefig("DataMining/Figures/RandomForest/rf_confusion_matrix.png", dpi=150)
-plt.savefig("DataMining/Figures/RandomForest/rf_confusion_matrix.pdf")
+plt.savefig("DataMining/Figures/Classification/RandomForest/rf_confusion_matrix.png", dpi=150)
+plt.savefig("DataMining/Figures/Classification/RandomForest/rf_confusion_matrix.pdf")
 
 #plt.show()
 plt.close()
@@ -105,8 +124,8 @@ feat_imp = feat_imp.sort_values()
 feat_imp.plot(kind='barh', figsize=(7, 6),title="RF Feature Importances")
 
 plt.tight_layout()
-plt.savefig("DataMining/Figures/RandomForest/rf_feature_importance.pdf")
-plt.savefig("DataMining/Figures/RandomForest/rf_feature_importance.png", dpi = 150)
+plt.savefig("DataMining/Figures/Classification/RandomForest/rf_feature_importance.pdf")
+plt.savefig("DataMining/Figures/Classification/RandomForest/rf_feature_importance.png", dpi = 150)
 # plt.show()
 plt.close()
 
@@ -126,12 +145,8 @@ results_df['predicted_class'] = predicted_labels
 print("\nPredictions for each id and date:")
 print(results_df.head(20))
 
-# print("Train users:", train_df["id"].nunique())
-# print("Test users:", test_df["id"].nunique())
-# print("Prediction users:", results_df["id"].nunique())
-
 # Save to CSV
-results_df.to_csv("DataMining/csv_files/RandomForest/rf_predictions.csv", index=False)
+results_df.to_csv("DataMining/csv_files/Classification/RandomForest/rf_predictions.csv", index=False)
 
 rf_results = pd.DataFrame({
     'Model': ['Random Forest'],
@@ -140,9 +155,4 @@ rf_results = pd.DataFrame({
     'Test macro F1': [test_macro_f1]
 })
 
-# print(results_df["id"].nunique())
-# print(results_df["id"].unique())
-# print(results_df["id"].value_counts())
-
-
-rf_results.to_csv("DataMining/csv_files/RandomForest/rf_results.csv", index=False)
+rf_results.to_csv("DataMining/csv_files/Classification/RandomForest/rf_results.csv", index=False)
