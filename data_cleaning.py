@@ -327,7 +327,7 @@ def create_one_size_window(
         ids_with_feature = df[df['variable'] == feature]['id'].unique()
         print(f"{feature}: {len(ids_with_feature)}/27 users")
 
-        # rename columns (temporarily)
+        # rename columns
         temp = df[df['variable'] == feature][['id', 'date', 'value']].rename(columns={'value': feature})
 
         if merged_df is None:
@@ -370,7 +370,6 @@ def create_one_size_window(
                 row[f'{feature}_min'] = window_slice[feature].min()
                 row[f'{feature}_max'] = window_slice[feature].max()
                 row[f'{feature}_trend'] = window_slice[feature].iloc[-1] - window_slice[feature].iloc[0]
-
 
             # target (e.g mood)
             row['target'] = user_df.loc[i, target_feature]
