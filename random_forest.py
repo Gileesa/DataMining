@@ -119,6 +119,7 @@ actual_labels = le.inverse_transform(y_test)
 results_df = pd.DataFrame()
 results_df['id'] = test_df['id'].values
 results_df['date'] = test_df['date'].values
+results_df['actual_value'] = test_df['target'].values
 results_df['actual_class'] = actual_labels
 results_df['predicted_class'] = predicted_labels
 
