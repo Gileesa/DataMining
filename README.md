@@ -71,7 +71,7 @@ The dataset is split into train and test sets using a time-aware split per user 
 | `classification_dataset.py` | Class creation + train/test split |
 | `Classification_dataset_RNN.py` | Prepares sequential classification dataset for RNN models |
 | `data_loader.py` | Loading prepared datasets |
-| `data_exploration.py` | Used for data exploration; not necessary to run pipeline |
+| `data_exploration.py` | Used for data exploration |
 | `random_forest.py` | Random Forest classification model with hyperparameter tuning |
 | `regression_random_forest.py` | Random Forest regression model for continuous mood prediction |
 | `plotting_rf_classification.py` | Generates classification plots (confusion matrix, feature importance, etc.) |
