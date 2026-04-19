@@ -65,8 +65,6 @@ The dataset is split into train and test sets using a time-aware split per user 
 
 ## Structure
 
-## Structure
-
 | File | Description |
 |------|-------------|
 | `data_cleaning.py` | Cleaning + window dataset creation |
