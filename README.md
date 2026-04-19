@@ -1,5 +1,5 @@
 # DataMining
-For the VU course Data Mining (X_400108)
+For the VU course Data Mining Techniques (X_400108)
 
 This project is part of the Data Mining Techniques course and focuses on predicting the next-day mood of smartphone users based on behavioral data.
 
