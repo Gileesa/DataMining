@@ -94,15 +94,15 @@ The dataset is split into train and test sets using a time-aware split per user 
 | `Classification_dataset_RNN.py` | Prepares sequential classification dataset for RNN models |
 | `data_loader.py` | Loading prepared datasets |
 | `data_exploration.py` | Used for data exploration |
-| `random_forest.py` | Random Forest classification model with hyperparameter tuning |
-| `regression_random_forest.py` | Random Forest regression model for continuous mood prediction |
+| `random_forest.py` | Baseline Random Forest classification model with hyperparameter tuning |
+| `regression_random_forest.py` | Baseline Random Forest regression model for continuous mood prediction |
 | `plotting_rf_classification.py` | Generates classification plots (confusion matrix, feature importance, etc.) |
 | `plotting_rf_regression.py` | Generates regression plots (predictions, residuals, etc.) |
 | `classification_RNN_model.py` | RNN model for mood classification |
 | `regression_RNN_model.py` | RNN model for mood regression |
 | `RNN_utils.py` | Utility functions for RNN models (data prep, training helpers) |
-| `classification_test.py` | Evaluation of classification model (metrics, reports, confusion matrix) |
-| `regression_test.py` | Evaluation of regression model (MSE, MAE, predictions) |
+| `classification_test.py` | Training and testing of classification model - 20 most important features|
+| `regression_test.py` | Training and testing regression model - 20 most important features |
 | `gridsearch.py` | Hyperparameter tuning using grid/randomized search |
 | `plot.py` | Additional classification visualizations |
 | `plot_regression.py` | Additional regression visualizations |
