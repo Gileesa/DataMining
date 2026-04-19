@@ -96,6 +96,8 @@ The dataset is split into train and test sets using a time-aware split per user 
 ---
 
 ## Authors
-Gileesa McCormack, Sooriyaa Karunaharan, Rohan Kanhai\\
-Group 154, Data Mining Techniques (X_400108)\\
+Gileesa McCormack, Sooriyaa Karunaharan, Rohan Kanhai
+
+Group 154, Data Mining Techniques (X_400108)
+
 Vrije Universiteit Amsterdam
