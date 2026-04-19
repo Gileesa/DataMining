@@ -64,13 +64,34 @@ The dataset is split into train and test sets using a time-aware split per user 
 
 ## Structure
 
+## Structure
+
 | File | Description |
 |------|-------------|
 | `data_cleaning.py` | Cleaning + window dataset creation |
 | `classification_dataset.py` | Class creation + train/test split |
+| `Classification_dataset_RNN.py` | |
 | `data_loader.py` | Loading prepared datasets |
+| `data_exploration.py` | Used for data exploration; not necessary to run pipeline|
 | `random_forest.py` | Classification model |
+| `regression_random_forest.py` | |
+| `plotting_rf_classification.py` | |
+| `plotting_rf_regression.py` | |
+| `classification_RNN_model.py` | |
+| `regression_RNN_model.py` | |
+| `RNN_utils.py` | |
+| `classification_test.py` | |
+| `regression_test.py` | |
+| `test_and_train.py` | |
+| `xgboost_model.py` | |
+| `gridsearch.py` | |
+| `plot.py` | |
+| `plot_regression.py` | |
+| `Comparison.py` | |
 | `config.py` | Shared parameters |
+| `dataset_mood_smartphone.csv` | Raw dataset|
+| `csv_files/` |Folder for cleaned datasets|
+| `Figures/` |Folder for figures|
 
 ---
 
