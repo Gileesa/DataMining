@@ -366,10 +366,10 @@ def create_one_size_window(
 
             for feature in feature_names:
                 row[f'{feature}_avg'] = window_slice[feature].mean()
-               # row[f'{feature}_std'] = window_slice[feature].std()
-               # row[f'{feature}_min'] = window_slice[feature].min()
-               # row[f'{feature}_max'] = window_slice[feature].max()
-               # row[f'{feature}_trend'] = window_slice[feature].iloc[-1] - window_slice[feature].iloc[0]
+                row[f'{feature}_std'] = window_slice[feature].std()
+                row[f'{feature}_min'] = window_slice[feature].min()
+                row[f'{feature}_max'] = window_slice[feature].max()
+                row[f'{feature}_trend'] = window_slice[feature].iloc[-1] - window_slice[feature].iloc[0]
 
             # target (e.g mood)
             row['target'] = user_df.loc[i, target_feature]
@@ -420,7 +420,7 @@ df_windows = create_one_size_window(
     KNN_impute,
     feature_names=RELEVANT_FEATURES,
     window_size=5,
-    save_path='csv_files/KNN/(RNN)KNN_one_size_mood_window_dataset.csv'
+    save_path='Datamining/csv_files/KNN/KNN_one_size_mood_window_dataset.csv'
 )
 
 print('WINDOW number of ids: ', len(df_windows['id'].unique()))

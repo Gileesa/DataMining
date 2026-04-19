@@ -1,0 +1,3 @@
+Model,Cross-validation Macro F1
+Random Forest (all features),0.43291673280811765
+Random Forest (top 20 features),0.46656089946976637

@@ -1,0 +1,2 @@
+Selected Model,Cross-validation Macro F1,Test Accuracy,Test Macro F1
+Random Forest (top 20 features),0.46656089946976637,0.6015831134564644,0.5854270398880616
