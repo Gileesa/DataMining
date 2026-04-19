@@ -7,6 +7,38 @@ The dataset contains time-stamped measurements (e.g., mood, screen time, activit
 
 ---
 
+## Table of Contents
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [How to Run](#how-to-run)
+- [Pipeline](#pipeline)
+- [Structure](#structure)
+- [Authors](#authors)
+
+---
+
+## Requirements
+Requirements can be found in the requirements.txt
+> 
+
+## Installation
+To run this code, run the following commands in the terminal:
+> ```
+> git clone https://github.com/Gileesa/DataMining
+> cd datamining
+> pip install -r requirements.txt
+> ```
+
+## How to Run
+To run the full pipeline, the following commands can be run in the terminal:
+> ```
+> python data_cleaning.py
+> python classification_dataset.py
+> python random_forest.py
+> ```
+
+---
+
 ## Pipeline
 
 ### 1. Data Cleaning & Imputation
@@ -39,3 +71,10 @@ The dataset is split into train and test sets using a time-aware split per user 
 | `data_loader.py` | Loading prepared datasets |
 | `random_forest.py` | Classification model |
 | `config.py` | Shared parameters |
+
+---
+
+## Authors
+Gileesa McCormack, Sooriyaa Karunaharan, Rohan Kanhai
+Group 154, Data Mining Techniques (X_400108)
+Vrije Universiteit Amsterdam
