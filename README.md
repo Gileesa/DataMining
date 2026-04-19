@@ -30,11 +30,11 @@ To run this code, run the following commands in the terminal:
 > ```
 
 ## How to Run
-To run the full pipeline, the following commands can be run in the terminal:
+This repository consists of many different sub parts, most of which can be run separate from the others. A full overview of all files and their function can be found below under 'Structure'.
+
+Example on how to run the data cleaning part:
 > ```
 > python data_cleaning.py
-> python classification_dataset.py
-> python random_forest.py
 > ```
 
 ---
@@ -96,6 +96,6 @@ The dataset is split into train and test sets using a time-aware split per user 
 ---
 
 ## Authors
-Gileesa McCormack, Sooriyaa Karunaharan, Rohan Kanhai
-Group 154, Data Mining Techniques (X_400108)
+Gileesa McCormack, Sooriyaa Karunaharan, Rohan Kanhai\\
+Group 154, Data Mining Techniques (X_400108)\\
 Vrije Universiteit Amsterdam
