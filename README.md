@@ -24,7 +24,7 @@ Requirements can be found in the requirements.txt
 ## Installation
 To run this code, run the following commands in the terminal:
 > ```
-> git clone https://github.com/Gileesa/DataMining
+> git clone https://github.com/Gileesa/DataMining.git
 > cd datamining
 > pip install -r requirements.txt
 > ```
