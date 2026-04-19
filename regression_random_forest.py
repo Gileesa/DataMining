@@ -85,6 +85,31 @@ print("\n Test RESULTS")
 print(f"MSE: {test_mse:.4f}")
 print(f"MAE: {test_mae:.4f}")
 
+
+feat_imp = pd.Series(best_rf.feature_importances_, index=feature_cols)
+
+feat_imp = feat_imp.sort_values()
+
+feat_imp.plot(kind='barh', figsize=(7, 6), title="RF Feature Importances")
+
+
+feat_imp_df = pd.DataFrame()
+feat_imp_df["feature"] = feat_imp.index
+feat_imp_df["importance"] = feat_imp.values
+
+feat_imp_df = feat_imp_df.sort_values(by="importance", ascending=False)
+
+feat_imp_df.to_csv(
+    "DataMining/csv_files/Regression/RandomForest/rf_feature_importances_sorted.csv",
+    index=False
+)
+
+
+plt.tight_layout()
+plt.savefig("DataMining/Figures/Regression/RandomForest/rf_feature_importance.png", dpi=150)
+plt.savefig("DataMining/Figures/Regression/RandomForest/rf_feature_importance.pdf")
+plt.close()
+
 # Save predictions
 results_df = pd.DataFrame({
                             "id"                : test_df["id"].values,
@@ -112,14 +137,3 @@ summary_df.to_csv(
                     "DataMining/csv_files/Regression/RandomForest/rf_tuned_results.csv",
                     index=False
                 )
-
-feat_imp = pd.Series(best_rf.feature_importances_, index=feature_cols)
-
-feat_imp = feat_imp.sort_values()
-
-feat_imp.plot(kind='barh', figsize=(7, 6), title="RF Feature Importances")
-
-plt.tight_layout()
-plt.savefig("DataMining/Figures/Regression/RandomForest/rf_feature_importance.png", dpi=150)
-plt.savefig("DataMining/Figures/Regression/RandomForest/rf_feature_importance.pdf")
-plt.close()

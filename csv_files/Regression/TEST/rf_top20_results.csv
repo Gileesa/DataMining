@@ -1,0 +1,2 @@
+Model,Test MSE,Test MAE,Best Params,Best CV Neg MSE,Best CV MSE
+Random Forest Regressor (top 20 features),0.3564826690325297,0.4372770251218827,"{'n_estimators': 400, 'min_samples_split': 2, 'min_samples_leaf': 5, 'max_features': 1.0, 'max_depth': 10, 'criterion': 'absolute_error'}",-0.4363398977473887,0.4363398977473887
