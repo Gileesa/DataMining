@@ -81,7 +81,9 @@ The continuous mood score is converted into three classes:
 
 The dataset is split into train and test sets using a time-aware split per user to avoid data leakage.
 
-### 4. Modeling *(Task 2A)*
+### 4. Modeling *(Task 2A & 4)*
+
+### 5. Evaluation
 
 ---
 
