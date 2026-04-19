@@ -14,6 +14,9 @@ os.makedirs("DataMining/csv_files/Classification/TEST", exist_ok=True)
 # Load data
 train_df, test_df, X_train, X_test, feature_cols = load_data()
 
+print("feature_cols:")
+print(feature_cols)
+
 # Encode labels
 le = LabelEncoder()
 y_train = le.fit_transform(train_df["target_classification"])

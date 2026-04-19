@@ -15,19 +15,19 @@ os.makedirs(fig_dir, exist_ok=True)
 train_df, test_df, X_train, X_test, feature_cols = load_data()
 
 # Load saved CSV files
-comparison_path = f"{csv_dir}/rf_feature_selection_trial_results.csv"
+comparison_path = f"{csv_dir}/rf_feature_selection_cv_results.csv"
 importance_path = f"{csv_dir}/rf_feature_importances_sorted.csv"
 top20_path = f"{csv_dir}/top20_selected_features.csv"
-full_pred_path = f"{csv_dir}/rf_full_predictions.csv"
-top20_pred_path = f"{csv_dir}/rf_top20_predictions.csv"
+final_pred_path = f"{csv_dir}/rf_final_predictions.csv"
+final_results_path = f"{csv_dir}/rf_final_results.csv"
 
 comparison_df = pd.read_csv(comparison_path)
 feat_imp_df = pd.read_csv(importance_path)
 top20_df = pd.read_csv(top20_path)
-full_results_df = pd.read_csv(full_pred_path)
-top20_results_df = pd.read_csv(top20_pred_path)
+final_results_df = pd.read_csv(final_pred_path)
+summary_df = pd.read_csv(final_results_path)
 
-# 1. Class distribution
+# Class distribution
 plt.figure(figsize=(7, 5))
 train_df["target_classification"].value_counts().plot(kind="bar")
 plt.title("Class Distribution")
@@ -38,7 +38,7 @@ plt.savefig(f"{fig_dir}/class_distribution.png", dpi=150)
 plt.savefig(f"{fig_dir}/class_distribution.pdf")
 plt.close()
 
-# 2. Correlation matrix
+# Correlation matrix
 corr_df = train_df[feature_cols + ["target"]].corr()
 
 plt.figure(figsize=(10, 8))
@@ -49,51 +49,51 @@ plt.savefig(f"{fig_dir}/rf_correlation_matrix.png", dpi=150)
 plt.savefig(f"{fig_dir}/rf_correlation_matrix.pdf")
 plt.close()
 
-
-# 3. Full model confusion matrix
-full_cm = pd.crosstab(
-    full_results_df["actual_class"],
-    full_results_df["predicted_class"]
+# Final model confusion matrix
+final_cm = pd.crosstab(
+    final_results_df["actual_class"],
+    final_results_df["predicted_class"]
 )
 
+selected_model_name = summary_df.loc[0, "Selected Model"]
+
 plt.figure(figsize=(6, 5))
-sns.heatmap(full_cm, annot=True, fmt="d", cmap="Blues")
-plt.title("Random Forest (All Features)")
+sns.heatmap(final_cm, annot=True, fmt="d", cmap="Blues")
+plt.title(f"{selected_model_name} - Final Confusion Matrix")
 plt.xlabel("Predicted Class")
 plt.ylabel("Actual Class")
 plt.tight_layout()
-plt.savefig(f"{fig_dir}/rf_full_confusion_matrix.png", dpi=150)
-plt.savefig(f"{fig_dir}/rf_full_confusion_matrix.pdf")
+plt.savefig(f"{fig_dir}/rf_final_confusion_matrix.png", dpi=150)
+plt.savefig(f"{fig_dir}/rf_final_confusion_matrix.pdf")
 plt.close()
 
+# Comparison bar chart
+selected_model_name = summary_df.loc[0, "Selected Model"]
+final_test_accuracy = summary_df.loc[0, "Test Accuracy"]
+final_test_macro_f1 = summary_df.loc[0, "Test Macro F1"]
 
-# 4. Top-20 model confusion matrix
-top20_cm = pd.crosstab(
-    top20_results_df["actual_class"],
-    top20_results_df["predicted_class"]
-)
+plot_df = pd.DataFrame()
+plot_df["Model"] = comparison_df["Model"]
+plot_df["CV macro F1 (train)"] = comparison_df["Cross-validation Macro F1"]
+plot_df["Test Accuracy"] = 0.0
+plot_df["Test Macro F1"] = 0.0
 
-plt.figure(figsize=(6, 5))
-sns.heatmap(top20_cm, annot=True, fmt="d", cmap="Blues")
-plt.title("Random Forest (Top 20 Features)")
-plt.xlabel("Predicted Class")
-plt.ylabel("Actual Class")
-plt.tight_layout()
-plt.savefig(f"{fig_dir}/rf_top20_confusion_matrix.png", dpi=150)
-plt.savefig(f"{fig_dir}/rf_top20_confusion_matrix.pdf")
-plt.close()
+if selected_model_name == "Random Forest (all features)":
+    plot_df.loc[0, "Test Accuracy"] = final_test_accuracy
+    plot_df.loc[0, "Test Macro F1"] = final_test_macro_f1
+else:
+    plot_df.loc[1, "Test Accuracy"] = final_test_accuracy
+    plot_df.loc[1, "Test Macro F1"] = final_test_macro_f1
 
-
-# 5. Comparison bar chart
-comparison_plot = comparison_df.set_index("Model")[["CV macro F1 (train)", "Test Accuracy", "Test Macro F1"]]
+comparison_plot = plot_df.set_index("Model")[["CV macro F1 (train)", "Test Accuracy", "Test Macro F1"]]
 
 # scale to percentages
 comparison_plot_percent = comparison_plot * 100
 
 ax = comparison_plot_percent.plot(
     kind="bar",
-    figsize=(6, 6),
-    width=0.45
+    figsize=(8, 6),
+    width=0.75
 )
 
 plt.title("Random Forest Performance: All Features vs Top 20 Features", fontsize=16)
@@ -105,9 +105,14 @@ plt.yticks(fontsize=11)
 plt.xticks(fontsize=11)
 plt.grid(axis="y", linestyle="--", alpha=0.4)
 
-# add value labels on bars
 for container in ax.containers:
-    ax.bar_label(container, fmt="%.1f", padding=3, fontsize=10)
+    labels = []
+    for value in container.datavalues:
+        if value > 0:
+            labels.append(f"{value:.1f}")
+        else:
+            labels.append("")
+    ax.bar_label(container, labels=labels, padding=3, fontsize=10)
 
 plt.legend(title="Metric", fontsize=11, title_fontsize=11)
 plt.tight_layout()
@@ -115,8 +120,7 @@ plt.savefig(f"{fig_dir}/rf_feature_selection_comparison.png", dpi=150)
 plt.savefig(f"{fig_dir}/rf_feature_selection_comparison.pdf")
 plt.close()
 
-
-# 6. Top-20 feature importance plot
+# Top-20 feature importance plot
 top_k = 20
 top_features_df = feat_imp_df.head(top_k)
 plot_df = top_features_df.sort_values("importance", ascending=True)
@@ -131,8 +135,7 @@ plt.savefig(f"{fig_dir}/rf_top20_feature_importance.png", dpi=150)
 plt.savefig(f"{fig_dir}/rf_top20_feature_importance.pdf")
 plt.close()
 
-
-# 7. Histograms of selected top features
+# Histograms of selected top features
 selected_features = top20_df["selected_feature"].tolist()
 
 selected_existing = []
@@ -183,5 +186,3 @@ plt.tight_layout()
 plt.savefig(f"{fig_dir}/selected_feature_histograms.png", dpi=150)
 plt.savefig(f"{fig_dir}/selected_feature_histograms.pdf")
 plt.close()
-
-print("Feature-selection plots saved successfully.")
