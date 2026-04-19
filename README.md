@@ -84,7 +84,6 @@ The dataset is split into train and test sets using a time-aware split per user 
 | `gridsearch.py` | Hyperparameter tuning using grid/randomized search |
 | `plot.py` | Additional classification visualizations |
 | `plot_regression.py` | Additional regression visualizations |
-| `Comparison.py` | Compares performance across models and feature sets |
 | `config.py` | Shared parameters |
 | `dataset_mood_smartphone.csv` | Raw dataset (not actually present in this repository) |
 | `csv_files/` | Folder for cleaned datasets |
