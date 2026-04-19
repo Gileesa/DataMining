@@ -18,8 +18,7 @@ The dataset contains time-stamped measurements (e.g., mood, screen time, activit
 ---
 
 ## Requirements
-Requirements can be found in the requirements.txt
-> 
+Requirements can be found in the requirements.txt file
 
 ## Installation
 To run this code, run the following commands in the terminal:
@@ -28,6 +27,8 @@ To run this code, run the following commands in the terminal:
 > cd datamining
 > pip install -r requirements.txt
 > ```
+
+In addition, it is important to note that the raw data file 'dataset_mood_smartphone.csv' is **NOT** included in this repository. It must be added to the DataMining folder by the user. Without this csv file, the data exploration part (data_exploration.py) and the data cleaning part (data_cleaning.py) cannot run properly.
 
 ## How to Run
 This repository consists of many different sub parts, most of which can be run separate from the others. A full overview of all files and their function can be found below under 'Structure'.
@@ -89,7 +90,7 @@ The dataset is split into train and test sets using a time-aware split per user 
 | `plot_regression.py` | |
 | `Comparison.py` | |
 | `config.py` | Shared parameters |
-| `dataset_mood_smartphone.csv` | Raw dataset|
+| `dataset_mood_smartphone.csv` | Raw dataset (not actually present in this repository)|
 | `csv_files/` |Folder for cleaned datasets|
 | `Figures/` |Folder for figures|
 
