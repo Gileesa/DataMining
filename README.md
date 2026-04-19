@@ -69,28 +69,28 @@ The dataset is split into train and test sets using a time-aware split per user 
 |------|-------------|
 | `data_cleaning.py` | Cleaning + window dataset creation |
 | `classification_dataset.py` | Class creation + train/test split |
-| `Classification_dataset_RNN.py` | |
+| `Classification_dataset_RNN.py` | Prepares sequential classification dataset for RNN models |
 | `data_loader.py` | Loading prepared datasets |
-| `data_exploration.py` | Used for data exploration; not necessary to run pipeline|
-| `random_forest.py` | Classification model |
-| `regression_random_forest.py` | |
-| `plotting_rf_classification.py` | |
-| `plotting_rf_regression.py` | |
-| `classification_RNN_model.py` | |
-| `regression_RNN_model.py` | |
-| `RNN_utils.py` | |
-| `classification_test.py` | |
-| `regression_test.py` | |
-| `test_and_train.py` | |
-| `xgboost_model.py` | |
-| `gridsearch.py` | |
-| `plot.py` | |
-| `plot_regression.py` | |
-| `Comparison.py` | |
+| `data_exploration.py` | Used for data exploration; not necessary to run pipeline |
+| `random_forest.py` | Random Forest classification model with hyperparameter tuning |
+| `regression_random_forest.py` | Random Forest regression model for continuous mood prediction |
+| `plotting_rf_classification.py` | Generates classification plots (confusion matrix, feature importance, etc.) |
+| `plotting_rf_regression.py` | Generates regression plots (predictions, residuals, etc.) |
+| `classification_RNN_model.py` | RNN model for mood classification |
+| `regression_RNN_model.py` | RNN model for mood regression |
+| `RNN_utils.py` | Utility functions for RNN models (data prep, training helpers) |
+| `classification_test.py` | Evaluation of classification model (metrics, reports, confusion matrix) |
+| `regression_test.py` | Evaluation of regression model (MSE, MAE, predictions) |
+| `test_and_train.py` | General script for training and testing workflows |
+| `xgboost_model.py` | XGBoost model for mood prediction (alternative model) |
+| `gridsearch.py` | Hyperparameter tuning using grid/randomized search |
+| `plot.py` | Additional classification visualizations |
+| `plot_regression.py` | Additional regression visualizations |
+| `Comparison.py` | Compares performance across models and feature sets |
 | `config.py` | Shared parameters |
-| `dataset_mood_smartphone.csv` | Raw dataset (not actually present in this repository)|
-| `csv_files/` |Folder for cleaned datasets|
-| `Figures/` |Folder for figures|
+| `dataset_mood_smartphone.csv` | Raw dataset (not actually present in this repository) |
+| `csv_files/` | Folder for cleaned datasets |
+| `Figures/` | Folder for figures |
 
 ---
 
