@@ -81,8 +81,6 @@ The dataset is split into train and test sets using a time-aware split per user 
 | `RNN_utils.py` | Utility functions for RNN models (data prep, training helpers) |
 | `classification_test.py` | Evaluation of classification model (metrics, reports, confusion matrix) |
 | `regression_test.py` | Evaluation of regression model (MSE, MAE, predictions) |
-| `test_and_train.py` | General script for training and testing workflows |
-| `xgboost_model.py` | XGBoost model for mood prediction (alternative model) |
 | `gridsearch.py` | Hyperparameter tuning using grid/randomized search |
 | `plot.py` | Additional classification visualizations |
 | `plot_regression.py` | Additional regression visualizations |
