@@ -38,6 +38,7 @@ Example on how to run the data cleaning part:
 > python data_cleaning.py
 > ```
 
+### Files for Random Forest Classification * config.py * data_exploration.py * data_cleaning.py * classification_dataset.py * data_loader.py * random_forest.py * classification_test.py * plotting_rf_classification.py * plot.py ### Files for Random Forest Regression * data_cleaning.py * data_loader.py * regression_random_forest.py * regression_test.py * plotting_rf_regression.py * plot_regression.py
 ---
 
 ## Pipeline
